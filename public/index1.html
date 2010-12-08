@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<head>
+  <title>Tutti - Interactively run Javascript on multiple browsers</title>
+  <style type="text/css">
+html, body {margin: 0;padding: 0;width:100%;height:100%;}
+h1, h2, h3 {margin: 0;padding: 0;}
+a {text-decoration: none}
+body{
+  background-color: #ddd;
+}
+body, input, textarea{
+  
+  font-family: Monaco, Monospace, fixed;
+}
+
+#header {
+  display: block;
+  width: 100%;
+  background-color: #fcffbe;
+  border-bottom: 1px solid #e7eab1;
+  color: #444;
+}
+#header h4{
+  margin: 0;
+}
+#container {
+  bottom: 5px;
+  height: auto;
+  width: 100%;
+  font-size: 18px;
+}
+#chats {
+  width: 100%;
+  max-height: 82%;
+  margin: 0;
+  margin-bottom: 5px;
+  list-style: none;    
+  padding: 0;
+}
+#chats .chat {
+  border-bottom: thin solid silver;
+  background-color: #fff;
+}
+#chats .chat span.user {
+  color: #AA0909;
+  font-wieght: bold;
+}
+#chats .chat span.message {
+  margin-left: 3px;
+}
+#chats .chat.remote {
+  background-color: #FFFFEE;
+}
+#chats .information {
+  color: #789f77;
+  font-size: 16px;
+  border-bottom: thin solid silver;
+}
+#imchat {
+  text-align: center;
+  margin-top: 0;
+  position: relative;
+  padding-bottom: 5px;
+}
+#im {
+  width: 95%;
+  text-align: left;
+  border: 1px solid #ccc;
+  background-color: #EFEFEF;
+  color: #000000;
+  font-size: 18px;
+  padding: 10px;
+  border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+}
+#im:focus {
+  outline: none;
+}
+.reply {
+  color: green;
+}
+  </style>
+</head>
+<body onload="applicationDidLoad();">
+  <div id="header">
+    <h1>Tutti</h1>
+    <h4>Interactively run Javascript on multiple browsers</h4>
+  </div>
+  <div id="container">
+    <ul id="chats">
+    </ul>
+    <form id="imchat" onsubmit="sendData(); return false;">
+      <input type="text" id="im" value="">
+    </form>
+  </div>
+  
+  <script src="javascripts/json.js"></script>
+  <script src="javascripts/socket.io.js" type="text/javascript" charset="utf-8"></script>
+  <script>io.setPath('/');</script>
+  <script type="text/javascript">
+
+
+
+var HOST = location.hostname,
+    PORT   = location.port;
+var socket;
+var username;
+var retryID;
+
+function browserName(){
+  var userAgent = navigator.userAgent
+  var regexs = [
+    /MS(?:(IE) ([0-9]\.[0-9]))/,
+    /(Chrome)\/([0-9]+\.[0-9]+)/,
+    /(Firefox)\/([0-9a-z\.]+)/,
+    /(Opera).*Version\/([0-9]+\.[0-9]+)/,
+    /Version\/([0-9]+\.[0-9]+).*(Safari)/
+  ]
+  for (var i = 0; i < regexs.length; i++){
+    var regex = regexs[i]
+    var match = userAgent.match(regex)
+    if (match){
+      var results = match.slice(1)
+      if (match.toString().indexOf('Safari') >= 0)
+        results = [results[1], results[0]]
+      return results.join(' ')
+    }
+  }
+  return userAgent
+}
+
+function connect(){
+  renderChatData({announcement: 'Connecting...'})
+  socket = new io.Socket(HOST, {port:PORT, 
+    //transports: ['htmlfile']})
+    transports: ['websocket', 'htmlfile', 'xhr-multipart', 'xhr-polling']});
+
+  socket.on('connect', function(){
+    if (retryID){
+      clearInterval(retryID)
+      retryID = null
+    }
+    console.log("Connected to "+HOST);
+  })
+  
+  socket.on('disconnect', function(){
+    console.log("Disconnected from " + HOST);
+    renderChatData({announcement: 'Disconnected from server!'})
+    startRetry()
+  }) 
+
+  socket.on('message', didReceiveData);
+
+  socket.connect();
+
+  username = username || browserName()// prompt("Enter a username: ", '');
+  if (username && username != "") {
+    socket.send("USERNAME:"+username);
+  }
+}
+
+var applicationDidLoad = function() {
+  if ('undefined'===typeof(io)) {
+    throw new Error("Application failed to load: Socket.IO not found");
+  }    
+  connect()
+  createSandBox()
+};
+
+function startRetry(){
+  retryID = setInterval(connect, 5000)
+}
+
+function scrollToBottom(){
+  window.scrollTo(0, document.body.scrollHeight)
+}
+
+var didReceiveData = function(data) {
+  console.log('received: ' + data)
+  if ("string"===typeof(data)) {
+    data = JSON.parse(data);
+  }
+  renderChatData(data);
+  if (data.message && !data.message.match(/^reply:/)){
+    try{
+      var reply = 'reply:' + sandbox.eval(data.message);
+    }catch(e){
+      reply = 'reply: Error: ' + e.message;
+    }
+    socket.send(reply);
+    renderChatData({message: reply, username: username});
+  }
+};
+
+var sendData = function() {
+  var doc = document,
+      elt = doc.getElementById('im'),
+      msg = elt.value;
+  if (msg) {
+    socket.send(msg);
+    renderChatData({message:msg});
+    elt.value = "";
+  }
+  elt.focus();
+  try{
+    var reply = 'reply: ' + sandbox.eval(msg);
+  }catch(e){
+    reply = 'reply: Error: ' + e.message;
+  }
+  socket.send(reply)
+  renderChatData({message:reply, username: username});
+};
+
+var renderChatData = function(data) {
+  var doc     = document,
+      chatBox = doc.getElementById('chats');
+
+  var renderMessage = function(message) {
+    var chatMsg = message.message,
+        chatUsr = (message.username || message.user),
+        chatElt = doc.createElement('li');
+    chatElt.setAttribute('class', 'chat');
+
+    if (chatUsr) {
+      chatElt.setAttribute('class', 'chat remote');
+      var usrElt = doc.createElement('span');
+      usrElt.setAttribute('class', 'user');
+      usrElt.innerHTML = chatUsr + ": ";
+      chatElt.appendChild(usrElt);
+    }
+    var msgElt = doc.createElement('span');
+    if (chatMsg.match(/^reply:/)){
+      msgElt.setAttribute('class', 'reply');
+      msgElt.innerHTML = chatMsg.substring(6);
+    }else{
+      msgElt.setAttribute('class', 'message');
+      msgElt.innerHTML = '> ' + chatMsg;
+    }
+    chatElt.appendChild(msgElt);
+    
+    return chatElt;
+  };
+
+  if (data && data.message) {        
+    chatBox.appendChild(renderMessage(data));
+  } else if (data && data.messages) {
+    var fragment = doc.createDocumentFragment(),
+        messages = data.messages,
+        count    = messages.length,
+        i = -1;
+    while (count > ++i) {
+      var message = messages[i];
+      fragment.appendChild(renderMessage(message));
+    }
+    chatBox.appendChild(fragment);        
+  } else if (data && data.announcement) {
+    var chatInfo = data.announcement,
+        infoElt  = doc.createElement('li');
+    infoElt.setAttribute('class', 'information');
+    infoElt.innerHTML = chatInfo;
+    chatBox.appendChild(infoElt);
+  } else if (data && data.userlist && data.userlist.length) {
+    var userlist = data.userlist,
+        infoElt  = doc.createElement('li');
+    infoElt.setAttribute('class', 'information');
+    infoElt.innerHTML = "Users: " + userlist.join(", ");
+    chatBox.appendChild(infoElt);
+  }
+  scrollToBottom()
+};
+  </script>
+</body>
+</html>
