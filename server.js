@@ -1,4 +1,4 @@
-//require.paths.unshift(__dirname + '/lib');
+require.paths.unshift(__dirname + '/lib');
 
 var io = require('socket.io')
 var express = require('express')
@@ -58,6 +58,7 @@ socket.on('connection', function(client) {
     client.on('disconnect', onClientDisconnect.bind(client))
 })
 
+// function wrapper to auto-handle errors thrown
 function handleErrs(f){
     return function(){
         try{
@@ -68,6 +69,7 @@ function handleErrs(f){
     }
 }
 
+// called when a messages comes from a socket
 function onClientMessage(data) {
     var client = this
     var message = JSON.parse(data)
@@ -104,6 +106,7 @@ function onClientMessage(data) {
     }
 }
 
+// when a socket disconnects
 function onClientDisconnect() {
     var client = this
     if (client.browser) {
@@ -120,6 +123,7 @@ function onClientDisconnect() {
     }
 }
 
+// start the server
 var port = 42234
 app.listen(port)
 console.log("Tutti listening on port " + port + ". Go to http://<host>:" + port)
