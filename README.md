@@ -4,7 +4,7 @@ Tutti is a web-based interactive Javascript console that allows you to simultane
 
 The live site
 -------------
-blah blah
+<http://tutti.tobyho.com/>
 
 To run locally
 --------------
@@ -24,5 +24,6 @@ Tutti depends on the follow software:
 
 1. node.js
 2. socket.IO
+3. Express
 3. jQuery
 4. jquery.console.js
