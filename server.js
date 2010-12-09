@@ -9,11 +9,10 @@ var json = json = JSON.stringify
 var AllConfigs = {
     // Production HTTP domain
     prodhttp: {
-        port: 46071,
+        port: 26730,
         rooms: true,
         http: true,
-        socket: false,
-        socketLocation: 'http://tutti.tobyho.com:46071'
+        socket: false
     },
     // Production socket.io domain
     prodsocket: {

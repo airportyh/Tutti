@@ -96,8 +96,14 @@ var retryIntervalID
 function connect(){
     io.setPath('/')
     displayData({announcement: 'Connecting...'})
-    socket = new io.Socket(location.hostname, {port:location.port, 
-        transports: ['websocket', 'htmlfile', 'xhr-multipart', 'xhr-polling']});
+    
+    var host = 'tutti.tobyho.com' // location.hostname
+    var port = 46071 // location.port
+    
+    socket = new io.Socket(host, {port:port, 
+        transports: ['xhr-polling']
+        //transports: ['websocket', 'htmlfile', 'xhr-multipart', 'xhr-polling']
+        });
 
     socket.on('connect', function(){
         if (retryIntervalID){

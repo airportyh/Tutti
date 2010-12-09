@@ -24,10 +24,16 @@
       </ul>
   
       <p>To get started, you simply create a room with <i>browser 1</i>, and then copy-n-paste the URL to <i>browser 2</i>, <i>browser 3</i>, <i>browser 4</i> and so on. Are you ready to give it a go?</p>
-      <form action="/create_room" method="post">
+      <form id="form" action="/create_room" method="post">
         <button class="button" type="submit">Create a Room</button>
         <div class="clear"></div>
       </form>
+      <script>
+        if (location.hostname !== 'localhost'){
+          var url = 'http://' + location.hostname + ':' + 46071 + '/create_room'
+          document.getElementById('form').setAttribute('action', url)
+        }
+      </script>
     </div>
   </div>
   <div id="bottom">
@@ -38,6 +44,7 @@
       <h2>Credits</h2>
       <ul>
         <li>LearnBoost's <a href="http://socket.io">Socket.IO</a></li>
+        <li><a href="http://expressjs.com/">Express</a> node web framework</a></li>
         <li><a href="http://nodejs.org/">node.js</a> by Ryan Dahl</li>
         <li>Chris Done's <a href="https://github.com/chrisdone/jquery-console">jQuery Console</a></li>
         <li>Arunjit Singh's <a href="https://github.com/arunjitsingh/socket-chat">Socket Chat</a> which I used as a reference implementation.</a></li>
