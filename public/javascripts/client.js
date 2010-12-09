@@ -101,8 +101,7 @@ function connect(){
     var port = 46071 // location.port
     
     socket = new io.Socket(host, {port:port, 
-        transports: ['xhr-polling']
-        //transports: ['websocket', 'htmlfile', 'xhr-multipart', 'xhr-polling']
+        transports: ['websocket', 'htmlfile', 'xhr-multipart', 'xhr-polling']
         });
 
     socket.on('connect', function(){
