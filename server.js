@@ -19,7 +19,7 @@ var AllConfigs = {
     prodsocket: {
         port: 46071,
         rooms: true,
-        http: false,
+        http: true,
         socket: true
     },
     // Normal dev environment
