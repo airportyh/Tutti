@@ -1,129 +1,209 @@
-require.paths.unshift(__dirname + '/lib');
+require.paths.unshift(__dirname + '/lib')
 
 var io = require('socket.io')
 var express = require('express')
 var fs = require('fs')
+var Couch = require('couchdb').Couch
 var json = json = JSON.stringify
 
-// create a secret access token for a room - roomID and secret must match to enter
-function makeSecret(){
-    return String(Math.random()).substring(2)
+var AllConfigs = {
+    // Production HTTP domain
+    prodhttp: {
+        port: 46071,
+        rooms: true,
+        http: true,
+        socket: false,
+        socketLocation: 'http://tutti.tobyho.com:46071'
+    },
+    // Production socket.io domain
+    prodsocket: {
+        port: 46071,
+        rooms: true,
+        http: false,
+        socket: true
+    },
+    // Normal dev environment
+    dev: {
+        port: 8080,
+        rooms: true,
+        http: true,
+        socket: true
+    },
+    // Standalone dev environment - no multiple rooms, no DB required, just the
+    // shell
+    standalone: {
+        port: 8080,
+        rooms: false,
+        http: true,
+        socket: true
+    }
 }
 
+// Figure out the environment to run in and setup the config
+var env = process.argv[2] || 'standalone'
+if (!(env in AllConfigs)){
+    console.log('Unknown environment: ' + env)
+    process.exit()
+}
+console.log('Starting "' + env + '" environment.')
+var config = AllConfigs[env]
+
+// Create the server
 var app = express.createServer()
-app.configure(function(){
-    app.use(express.staticProvider(__dirname + '/public'))
-})
-
-// state of the app, in-memory only
-var AppState = {
-    // roomID generator/incrementor
-    nextRoomID: 1,
-    // dictionary: roomID -> room
-    rooms: {},
-    // dictionary: roomID -> array of clients
-    clients: {}
+// An app-wide dictionary of roomID -> clients
+app.clients = {
+    // For `standalone` mode we only have one roomID: `root`
+    root : []
 }
 
-function saveAppState(){
-    delete AppState.clients
-    fs.writeFileSync('AppState.json', json(AppState))
-}
 
-function restoreAppState(){
-    try{
-        AppState = JSON.parse(fs.readFileSync('AppState.json'))
-        AppState.clients = {}
-        for (var roomID in AppState.rooms)
-            AppState.clients[roomID] = []
-        console.log('AppState restored: ' + json(AppState))
-    }catch(e){
-        console.log('AppState restore failed: ' + e)
-    }
-}
+// a CouchDB instance to store the rooms info
+var db = config.rooms ? new Couch('tutti') : null
 
-restoreAppState()
+function initHTTP(){
 
-// post to create a room in memory (restart and puff! it's gone.)
-app.post('/create_room', function(req, res){
-    var roomID = AppState.nextRoomID++
-    var secret = makeSecret()
-    AppState.rooms[roomID] = {id: roomID, secret: secret}
-    AppState.clients[roomID] = []
-    var path = '/' + roomID + '-' + secret
-    console.log('room created ' + path)
-    res.redirect(path)
-})
+    // server static files on ./public
+    app.configure(function(){
+        app.use(express.staticProvider(__dirname + '/public'))
+    })
 
-// page for entering the JS shell. You must have the correct roomID/secret pair
-// to enter. You should be redirected here from `/create_room` or gotten the 
-// URL from copy-n-paste.
-app.get('/:id-:secret', function(req, res){
-    var roomID = req.param('id')
-    var secret = req.param('secret')
-    var room = AppState.rooms[roomID]
-    if (!room){
-        res.send('That room does not exist.', 404)
-    }else if (room.secret === secret){
-        res.sendfile(__dirname + '/public/shell.html')
+    if (config.rooms){
+        
+        // front page is the intro/welcome page which will have a 'Create Room'
+        // button
+        app.get('/', function(req, res){
+            res.sendfile(__dirname + '/public/intro.html')
+        })
+        
+        // create a room, stored in couchdb
+        app.post('/create_room', function(req, res){
+            db.post({}, function(reply){
+                var roomID = reply.id
+                var path = '/' + roomID
+                console.log('room created ' + path)
+                res.redirect(path)
+            })
+        })
+
+        // page for entering the JS shell. You must have a valid roomID
+        // to enter. You should be redirected here from `/create_room` 
+        // or gotten the  URL from copy-n-paste.
+        app.get('/:roomID', function(req, res){
+            var roomID = req.param('roomID')
+            db.get(roomID, function(room){
+                if (!room){
+                    res.send('That room does not exist.', 404)
+                }else{
+                    res.sendfile(__dirname + '/public/shell.html')
+                }
+            })
+        })
+        
     }else{
-        res.send('Access denied. You gave the wrong secret token for this room.', 403)
+        
+        // Just serve the shell at the top level URL if no rooms needed.
+        app.get('/', function(req, res){
+            res.sendfile(__dirname + '/public/shell.html')
+        })
     }
-})
+}
 
-// socket stuff
-var socket = io.listen(app)
-socket.on('connection', function(client) {
-    client.on('message', handleErrs(onClientMessage).bind(client))
-    client.on('disconnect', onClientDisconnect.bind(client))
-})
+// init socket.io
+function initSocketIO(){
+    var socket = io.listen(app)
+    socket.on('connection', function(client) {
+        client.on('message', handleErrs(onClientMessage, true).bind(client))
+        client.on('disconnect', handleErrs(onClientDisconnect).bind(client))
+    })
+}
 
 // function wrapper to auto-handle errors thrown
-function handleErrs(f){
+function handleErrs(f, disconnect){
     return function(){
         try{
             f.apply(this, arguments)
         }catch(e){
             console.log(e)
-            this._onDisconnect()
+            if (disconnect)
+                this._onDisconnect()
         }
     }
 }
 
+// get the connected clients currently in a room. Init the clients array
+// if needed.
+function getClients(roomID){
+    var ret = app.clients[roomID]
+    if (!ret){
+        ret = app.clients[roomID] = []
+    }
+    return ret
+}
+
+// *my* broadcast, which only broadcasts within the same room
+function broadcast(client, message){
+    var clients = getClients(client.roomID)
+    // broadcasts to other peers in the same room
+    clients.forEach(function(peer){
+        if (peer !== client)
+            peer.send(json(message))
+    })
+}
+
 // called when a messages comes from a socket
 function onClientMessage(data) {
-    var client = this
-    var message = JSON.parse(data)
-    if (message.login) {
-        var room = AppState.rooms[message.login.roomID]
+    
+    function onLoggedIn(roomID, message){
+        clients = getClients(roomID)
         
-        if (!room){
-            client.send({announcement:"Room does not exist anymore. Not sure why. Try going back to the front page and creating another room."})
-            client._onDisconnect()
-            return
-        }
-        
-        if (room.secret !== message.login.secret){
-            client.send({announcement:"Login failed! You gave the wrong secret token for this room. Bye!"})
-            client._onDisconnect()
-            return
-        }
-        
-        var clients = AppState.clients[room.id]
         var browsers = clients.map(function(c){return c.browser})
         client.browser = message.login.browser
-        client.roomID = room.id
-        client.broadcast(json({announcement:client.browser + ' joined'}))
+        client.roomID = roomID
         client.send(json({announcement: "<br>Welcome to Tutti - interactively run Javascript on multiple browsers!"}))
         client.send(json({announcement: "===================================================================="}))
         client.send(json({announcement: "You can execute any Javascript in the shell below."}))
         client.send(json({browsers:browsers}))
         client.send(json({announcement: "<br>To connect another browser, just copy-n-paste the current URL into it."}))
         clients.push(client)
-    }else{
         //message.sessionId = client.sessionId
         message.browser = client.browser
-        client.broadcast(json(message))
+
+        broadcast(client, {announcement:client.browser + ' joined'})
+        
+    }
+    
+    var client = this
+    var message = JSON.parse(data)
+    if (message.login) {
+        
+        var clients
+        var roomID
+        if (config.rooms){
+            roomID = message.login.roomID
+            
+            db.get(roomID, function(room){
+                if (!room){
+                    client.send({announcement:"Room does not exist. Try going back to the front page and creating another room."})
+                    client._onDisconnect()
+                    return
+                }
+
+                if (room.secret !== message.login.secret){
+                    client.send({announcement:"Login failed! You gave the wrong secret token for this room. Bye!"})
+                    client._onDisconnect()
+                    return
+                }
+                
+                onLoggedIn(roomID, message)
+            })
+            
+        }else{
+            roomID = 'root'
+            onLoggedIn(roomID, message)
+        }
+        
+    }else{
+        broadcast(client, message)
     }
 }
 
@@ -131,12 +211,12 @@ function onClientMessage(data) {
 function onClientDisconnect() {
     var client = this
     if (client.browser) {
-        client.broadcast(json({
+        broadcast(client, {
             announcement:(client.browser)+' disconnected'
-        }))
+        })
     }
     if (client.roomID){
-        var clients = AppState.clients[client.roomID]
+        var clients = getClients(client.roomID)
         var pos = clients.indexOf(client)
         if (pos >= 0) {
             clients.splice(pos, 1)
@@ -144,18 +224,11 @@ function onClientDisconnect() {
     }
 }
 
-
+if (config.http)
+    initHTTP()
+if (config.socket)
+    initSocketIO()
 
 // start the server
-var port = 46071
-app.listen(port)
-console.log("Tutti listening on port " + port + ". Go to http://<host>:" + port)
-
-function onExit() {
-    saveAppState()
-    console.log('\nExiting.')
-    process.exit()
-}
-
-process.on('SIGINT', onExit)
-process.on('SIGTERM', onExit)
+app.listen(config.port)
+console.log("Tutti listening on port " + config.port + '.')

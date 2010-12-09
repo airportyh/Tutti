@@ -23,10 +23,17 @@ var browserName = (function(){
 })()
 
 // put together login info
-var login = {
-    browser: browserName,
-    roomID: location.pathname.match(/^\/([0-9]+)/)[1],
-    secret: location.pathname.match(/([0-9]+)$/)[1]
+var login
+if (location.pathname == '/'){
+    // no room/secret required for standalone mode
+    login = {
+        browser: browserName
+    }
+}else{
+    login = {
+        browser: browserName,
+        roomID: location.pathname.match(/^\/([0-9a-z]+)$/)[1]
+    }
 }
 
 // Count the number of open {, (, or [ for a given line of Javascript.
