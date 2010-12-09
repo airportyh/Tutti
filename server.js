@@ -2,6 +2,7 @@ require.paths.unshift(__dirname + '/lib');
 
 var io = require('socket.io')
 var express = require('express')
+var fs = require('fs')
 var json = json = JSON.stringify
 
 // create a secret access token for a room - roomID and secret must match to enter
@@ -23,6 +24,25 @@ var AppState = {
     // dictionary: roomID -> array of clients
     clients: {}
 }
+
+function saveAppState(){
+    delete AppState.clients
+    fs.writeFileSync('AppState.json', json(AppState))
+}
+
+function restoreAppState(){
+    try{
+        AppState = JSON.parse(fs.readFileSync('AppState.json'))
+        AppState.clients = {}
+        for (var roomID in AppState.rooms)
+            AppState.clients[roomID] = []
+        console.log('AppState restored: ' + json(AppState))
+    }catch(e){
+        console.log('AppState restore failed: ' + e)
+    }
+}
+
+restoreAppState()
 
 // post to create a room in memory (restart and puff! it's gone.)
 app.post('/create_room', function(req, res){
@@ -64,6 +84,7 @@ function handleErrs(f){
         try{
             f.apply(this, arguments)
         }catch(e){
+            console.log(e)
             this._onDisconnect()
         }
     }
@@ -93,11 +114,11 @@ function onClientMessage(data) {
         client.browser = message.login.browser
         client.roomID = room.id
         client.broadcast(json({announcement:client.browser + ' joined'}))
-        client.send(json({browsers:browsers}))
-        client.send(json({announcement: "<br/>Welcome to Tutti - interactively run Javascript on multiple browsers!"}))
+        client.send(json({announcement: "<br>Welcome to Tutti - interactively run Javascript on multiple browsers!"}))
         client.send(json({announcement: "===================================================================="}))
         client.send(json({announcement: "You can execute any Javascript in the shell below."}))
-        client.send(json({announcement: "To connect another browser, just copy-n-paste the current URL into it."}))
+        client.send(json({browsers:browsers}))
+        client.send(json({announcement: "<br>To connect another browser, just copy-n-paste the current URL into it."}))
         clients.push(client)
     }else{
         //message.sessionId = client.sessionId
@@ -123,7 +144,18 @@ function onClientDisconnect() {
     }
 }
 
+
+
 // start the server
 var port = 46071
 app.listen(port)
 console.log("Tutti listening on port " + port + ". Go to http://<host>:" + port)
+
+function onExit() {
+    saveAppState()
+    console.log('\nExiting.')
+    process.exit()
+}
+
+process.on('SIGINT', onExit)
+process.on('SIGTERM', onExit)

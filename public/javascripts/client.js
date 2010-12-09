@@ -87,7 +87,7 @@ var socket
 var retryIntervalID
 // Connect to socket.IO server
 function connect(){
-    
+    io.setPath('/')
     displayData({announcement: 'Connecting...'})
     socket = new io.Socket(location.hostname, {port:location.port, 
         transports: ['websocket', 'htmlfile', 'xhr-multipart', 'xhr-polling']});
@@ -155,7 +155,7 @@ function displayData(data){
     }else if (data.console){
         control.messageBeforePrompt('<span class="browser">' + data.browser + ' : </span>' + data.console, 'console')
     }else if (data.browsers){
-        control.messageBeforePrompt('Connected browsers: ' + (data.browsers.join(', ') || 'none'), 'announcement')
+        control.messageBeforePrompt('<br>Connected browsers: ' + (data.browsers.join(', ') || 'none'), 'announcement')
     }
 }
 

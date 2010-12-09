@@ -2,10 +2,48 @@
 <html>
 <head>
   <title>Tutti - Interactively run Javascript on multiple browsers</title>
+  <link href='http://fonts.googleapis.com/css?family=Lobster&subset=latin' rel='stylesheet' type='text/css'>
+  <link href="style.css" rel="stylesheet"/>
 </head>
 <body>
-  <h1>Tutti - Interactively run Javascript on multiple browsers</h1>
-  <form action="/create_room" method="post">
-    <button type="submit">Get Started!</button>
-  </form>
+  <div id="top">
+    <div class="frame">
+      <div class="title">
+        <h1>Tutti</h1>
+        <h4>Interactively run Javascript on multiple browsers</h4>
+      </div>
+      <p><i>Tutti</i> lets you interactively execute Javascript on multiple web browsers at the same time. It has great browser support! So far tested on </p>
+  
+      <ul>
+        <li>Firefox 3.6 and 4</li>
+        <li>Chrome 8.0</li>
+        <li>Safari 5.0</li>
+        <li>Safari 4 Mobile for iPad</li>
+        <li>Opera 10</li>
+        <li>Internet Explorer 6, 7, and 8</li>
+      </ul>
+  
+      <p>To get started, you simply create a room with <i>browser 1</i>, and then copy-n-paste the URL to <i>browser 2</i>, <i>browser 3</i>, <i>browser 4</i> and so on. Are you ready to give it a go?</p>
+      <form action="/create_room" method="post">
+        <button class="button" type="submit">Create a Room</button>
+        <div class="clear"></div>
+      </form>
+    </div>
+  </div>
+  <div id="bottom">
+    <div class="frame">
+      <h2>How it Works</h2>
+      <p>When you enter a Javascript command, it is immediately sent to each browser that's connected to the room. Each browser then <code>eval()</code> the Javascript within an iframe sandbox and then send the result back not only to the originating browser, but to <em>each</em> browser to be displayed.</p>
+      <p>All of the communication happen in real-time thanks to the brilliant <a href="http://socket.io">Socket.IO</a> which puts a nice abstraction around WebSocket and Comet techniques. </p>
+      <h2>Credits</h2>
+      <ul>
+        <li>LearnBoost's <a href="http://socket.io">Socket.IO</a></li>
+        <li><a href="http://nodejs.org/">node.js</a> by Ryan Dahl</li>
+        <li>Chris Done's <a href="https://github.com/chrisdone/jquery-console">jQuery Console</a></li>
+        <li>Arunjit Singh's <a href="https://github.com/arunjitsingh/socket-chat">Socket Chat</a> which I used as a reference implementation.</a></li>
+      </ul>
+      <h2>Feedback</h2>
+      <p>Email me at airportyh at gmail.com.</p>
+    </div>
+  </div>
 </body>
