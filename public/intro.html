@@ -6,6 +6,9 @@
   <link href="style.css" rel="stylesheet"/>
 </head>
 <body>
+  <a href="http://github.com/airportyh/tutti">
+    <img id="forkme" src="forkme.png"/>
+  </a>
   <div id="top">
     <div class="frame">
       <div class="title">
@@ -30,6 +33,7 @@
       </form>
       <script>
         if (location.hostname !== 'localhost'){
+          // ugly hack for prod environment cuz I don't feel like a template
           var url = 'http://' + location.hostname + ':' + 46071 + '/create_room'
           document.getElementById('form').setAttribute('action', url)
         }
@@ -50,7 +54,7 @@
         <li>Arunjit Singh's <a href="https://github.com/arunjitsingh/socket-chat">Socket Chat</a> which I used as a reference implementation.</a></li>
       </ul>
       <h2>Feedback</h2>
-      <p>Email me at airportyh at gmail.com.</p>
+      <p>Ping me on twitter <a href="http://twitter.com/airportyh">@airportyh</a> or at GitHub <a href="http://github.com/airportyh">airportyh</a>.</p>
     </div>
   </div>
 </body>

@@ -39,14 +39,16 @@ body{
     text-shadow: 0px 1px 1px #c2c2c2;
     filter: dropshadow(color=#c2c2c2, offx=0, offy=1);
 }
-#bottom{
-    text-shadow: 0px 1px 2px #828282;
-    filter: dropshadow(color=#828282, offx=0, offy=1);
-}
 #top,
 #bottom{
     padding: 2em 0;
 }
+#bottom{
+    text-shadow: 0px 1px 2px #828282;
+    filter: dropshadow(color=#828282, offx=0, offy=1);
+    padding-bottom: 3em;
+}
+
 .frame{
     width: 640px;
     margin: auto;
@@ -84,4 +86,10 @@ body{
 .button:active {
     border-top-color: #1b435e;
     background: #1b435e;
+}
+
+#forkme{
+    position: absolute;
+    top: 0;
+    right: 0;
 }
