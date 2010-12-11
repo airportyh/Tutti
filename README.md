@@ -22,8 +22,8 @@ Credits
 -------
 Tutti depends on the follow software:
 
-1. node.js
-2. socket.IO
-3. Express
-3. jQuery
-4. jquery.console.js
+1. [node.js](http://nodejs.org/)
+2. [socket.IO](http://socket.io/)
+3. [Express](http://expressjs.com/)
+3. [jQuery](http://jquery.com/)
+4. [jquery.console.js](https://github.com/chrisdone/jquery-console)
