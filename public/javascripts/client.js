@@ -97,8 +97,8 @@ function connect(){
     io.setPath('/')
     displayData({announcement: 'Connecting...'})
     
-    var host = 'tutti.tobyho.com' // location.hostname
-    var port = 46071 // location.port
+    var host = location.hostname
+    var port = location.port
     
     socket = new io.Socket(host, {port:port, 
         transports: ['websocket', 'htmlfile', 'xhr-multipart', 'xhr-polling']
