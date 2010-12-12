@@ -32,7 +32,7 @@
         <div class="clear"></div>
       </form>
       <script>
-        if (location.hostname !== 'localhost'){
+        if (location.hostname == 'tutti.tobyho.com'){
           // ugly hack for prod environment cuz I don't feel like a template
           var url = 'http://' + location.hostname + ':' + 46071 + '/create_room'
           document.getElementById('form').setAttribute('action', url)
@@ -57,4 +57,17 @@
       <p>Ping me on twitter <a href="http://twitter.com/airportyh">@airportyh</a> or at GitHub <a href="http://github.com/airportyh">airportyh</a>.</p>
     </div>
   </div>
+  <script type="text/javascript">
+    if (location.hostname == 'tutti.tobyho.com'){
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-3227150-7']);
+        _gaq.push(['_trackPageview']);
+
+        (function() {
+          var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+          ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+          var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+    }
+  </script>
 </body>
