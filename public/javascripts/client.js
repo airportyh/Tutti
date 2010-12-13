@@ -7,16 +7,28 @@ var browserName = (function(){
         /(Chrome)\/([0-9]+\.[0-9]+)/,
         /(Firefox)\/([0-9a-z]+\.[0-9a-z]+)/,
         /(Opera).*Version\/([0-9]+\.[0-9]+)/,
-        /Version\/([0-9]+\.[0-9]+).*(Safari)/
+        [/(iPhone).*Version\/([0-9]+\.[0-9]+).*(Safari)/, function(m){
+            return [m[1], m[3], m[2]].join(' ')
+        }],
+        [/(iPad).*Version\/([0-9]+\.[0-9]+).*(Safari)/, function(m){
+            return [m[1], m[3], m[2]].join(' ')
+        }],
+        [/Version\/([0-9]+\.[0-9]+).*(Safari)/, function(m){
+            return [m[2], m[1]].join(' ')
+        }]
     ]
     for (var i = 0; i < regexs.length; i++){
         var regex = regexs[i]
+        var pick = function(m){
+            return m.slice(1).join(' ')
+        }
+        if (regex.constructor === Array){
+            pick = regex[1]
+            regex = regex[0]
+        }
         var match = userAgent.match(regex)
         if (match){
-            var results = match.slice(1)
-            if (match.toString().indexOf('Safari') >= 0)
-                results = [results[1], results[0]]
-            return results.join(' ')
+            return pick(match)
         }
     }
     return userAgent
