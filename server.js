@@ -195,6 +195,7 @@ function onClientMessage(data) {
         }
         
     }else if(client.roomID){
+        message.browser = client.browser
         broadcast(client, message)
     }else{
         client._onDisconnect()

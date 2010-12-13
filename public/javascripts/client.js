@@ -158,7 +158,6 @@ function didReceiveData(data) {
 
 // send data as JSON
 function sendData(data){
-    data.browser = browserName
     socket.send(JSON.stringify(data))
 }
 
