@@ -561,7 +561,7 @@ if ('jQuery' in this) jQuery.io = this.io;
 			heartbeatInterval: 4000,
 			port: document.location.port || 80,
 			resource: 'socket.io',
-			transports: ['websocket', 'flashsocket', 'htmlfile', 'xhr-multipart', 'xhr-polling'],
+			transports: ['websocket', 'htmlfile', 'xhr-multipart', 'xhr-polling'],
 			transportOptions: {},
 			rememberTransport: false
 		};

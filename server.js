@@ -194,8 +194,10 @@ function onClientMessage(data) {
             onLoggedIn(roomID, message)
         }
         
-    }else{
+    }else if(client.roomID){
         broadcast(client, message)
+    }else{
+        client._onDisconnect()
     }
 }
 
