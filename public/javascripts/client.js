@@ -80,7 +80,6 @@ if (!window.console){
 function log(msg){
     var data = {console: msg}
     sendData(data)
-    data.browser = browserName
     displayData(data)
 }
 
@@ -151,7 +150,6 @@ function didReceiveData(data) {
                 emsg = 'Error: ' + e.message
             reply = {error: emsg}
         }
-        reply.browser = browserName
         displayData(reply)
         sendData(reply)
     }
@@ -165,19 +163,20 @@ function sendData(data){
 
 // display a message to the console or notice area
 function displayData(data){
+    var browser = data.browser || browserName
     if (data.announcement)
         control.messageBeforePrompt(data.announcement, 'announcement')
     else if (data.command){
         control.promptText(data.command, 'command')
         control.display('')
     }else if (data.reply){
-        var msg = '<span class="browser">' + data.browser + 
+        var msg = '<span class="browser">' + browser + 
             ' => </span>' + data.reply
         control.messageBeforePrompt(msg, 'reply')
     }else if (data.error){
-        control.messageBeforePrompt('<span class="browser">' + data.browser + ' => </span>' + data.error, 'error')
+        control.messageBeforePrompt('<span class="browser">' + browser + ' => </span>' + data.error, 'error')
     }else if (data.console){
-        control.messageBeforePrompt('<span class="browser">' + data.browser + ' : </span>' + data.console, 'console')
+        control.messageBeforePrompt('<span class="browser">' + browser + ' : </span>' + data.console, 'console')
     }else if (data.browsers){
         control.messageBeforePrompt('<br>Connected browsers: ' + (data.browsers.join(', ') || 'none'), 'announcement')
     }
@@ -210,7 +209,6 @@ function initConsole(){
                         emsg = 'Error: ' + e.message
                     reply = {error: emsg}
                 }finally{
-                    reply.browser = browserName
                     displayData(reply)
                     sendData(reply)
                 }
