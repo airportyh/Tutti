@@ -512,7 +512,7 @@ if ('jQuery' in this) jQuery.io = this.io;
 		this._xhr.onreadystatechange = function(){
 			if (self._xhr.readyState == 3) self._onData(self._xhr.responseText);
 		};
-		this._xhr.send();
+		this._xhr.send(null);
 	};
 	
 	XHRMultipart.check = function(){
@@ -584,7 +584,7 @@ if ('jQuery' in this) jQuery.io = this.io;
 				}
 			};
 		//}
-		this._xhr.send();
+		this._xhr.send(null);
 	};
 
 	XHRPolling.check = function(){

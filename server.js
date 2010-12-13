@@ -7,15 +7,8 @@ var Couch = require('couchdb').Couch
 var json = json = JSON.stringify
 
 var AllConfigs = {
-    // Production HTTP domain
-    prodhttp: {
-        port: 26730,
-        rooms: true,
-        http: true,
-        socket: false
-    },
     // Production socket.io domain
-    prodsocket: {
+    prod: {
         port: 46071,
         rooms: true,
         http: true,
