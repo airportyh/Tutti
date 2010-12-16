@@ -279,9 +279,10 @@
         // Handle key hit before translation
         // For picking up control characters like up/left/down/right
 
-        function ffSpecialKey(keyCode){
+        function ffSpecialKey(e){
+            var keyCode = e.keyCode;
             return keyCode == 8 ||
-                (keyCode >= 37 && keyCode <= 40)
+                (keyCode >= 37 && keyCode <= 40);
         }
 
         typer.keydown(function(e){
@@ -289,6 +290,7 @@
             dontTypeChar = false;
             var keyCode = e.keyCode;
             
+            console.log('down: ' + keyCode)
             // C-c: cancel the execution
             if(e.ctrlKey && keyCode == 67) {
                 cancelKeyPress = keyCode;
@@ -297,7 +299,7 @@
             }
             if (acceptInput) {
                 if (keyCode in keyCodes) {
-                    if (!noRepeatKeyDowns || !ffSpecialKey(keyCode)){
+                    if (!noRepeatKeyDowns || !ffSpecialKey(e)){
                         cancelKeyPress = keyCode;
                         (keyCodes[keyCode])();
                     }
@@ -324,11 +326,14 @@
         typer.keypress(function(e){
 
             var keyCode = e.keyCode || e.which;
+            console.log('which: ' + e.which);
+            console.log('keyCode: ' + e.keyCode);
+            console.log('press: ' + keyCode)
             if (isIgnorableKey(e)) {
                 return false;
             }
             
-            if (noRepeatKeyDowns && ffSpecialKey(keyCode)){
+            if (noRepeatKeyDowns && ffSpecialKey(e)){
                 (keyCodes[keyCode])();
                 return false;
             }else if (acceptInput && cancelKeyPress != keyCode && keyCode >= 32){
