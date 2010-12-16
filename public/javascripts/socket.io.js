@@ -33,7 +33,9 @@ if ('jQuery' in this) jQuery.io = this.io;
 		ios: false,
 
 		load: function(fn){
-			if (document.readyState == 'complete' || _pageLoaded) return fn();
+			if (document.readyState == 'complete' ||
+			    document.readyState == 'loaded'
+			    || _pageLoaded) return fn();
 			if ('attachEvent' in window){
 				window.attachEvent('onload', fn);
 			} else {
@@ -456,7 +458,15 @@ if ('jQuery' in this) jQuery.io = this.io;
 		var self = this;
 		this._xhr = this._request('', 'GET', true);
 		this._xhr.onreadystatechange = function(){
-			if (self._xhr.readyState == 3) self._onData(self._xhr.responseText);
+			if (self._xhr.readyState == 3){
+			    self._onData(self._xhr.responseText);
+			}else if (self._xhr.readyState == 4){
+			    console.log('connect ended')
+                if (self._xhr.status != 200){
+                    console.log('disconnecting')
+                    self.disconnect();
+                }  
+			}
 		};
 		this._xhr.send(null);
 	};
