@@ -48,6 +48,16 @@ if (location.pathname == '/'){
     }
 }
 
+// GA Event Tracking. We track when a JS command is issued and when
+// it's been executed. We don't record the actual JS being executed.
+function trackEvent(category, action, value){
+    if (_gaq){
+        var arr = ['_trackEvent', category, action]
+        if (value) arr.push(value)
+        _gaq.push(arr)
+    }
+}
+
 // Count the number of open {, (, or [ for a given line of Javascript.
 // Used to determine whether the command being entered is a multi-line.
 function countParams(line){
@@ -116,6 +126,7 @@ function connect(reconnect){
         });
 
     socket.on('connect', function(){
+        trackEvent('Connection', 'connect', reconnect ? 'reconnect': 'initial')
         if (retryIntervalID){
             clearInterval(retryIntervalID)
             retryIntervalID = null
@@ -123,6 +134,7 @@ function connect(reconnect){
     })
 
     socket.on('disconnect', function(){
+        trackEvent('Connection', 'disconnect')
         displayData({announcement: 'Disconnected from server!'})
         retryIntervalID = setInterval(function(){
             connect(true)
@@ -153,6 +165,7 @@ function didReceiveData(data) {
             reply = {error: emsg}
         }
         displayData(reply)
+        trackEvent('Command', 'completed')
         sendData(reply)
     }
 
@@ -200,6 +213,7 @@ function initConsole(){
             }else{
                 control.continuedPrompt = false
                 control.commandResult('')
+                trackEvent('Command', 'issued')
                 sendData({command: line})
                 var reply
                 try{
