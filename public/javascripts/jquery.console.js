@@ -137,12 +137,14 @@
         
         // Unfortunate Browser Sniffing Needed for getting FF to repeat
         // presses holding down backspace key
-        var ffVersion
+        var ffVersion;
         try{
             ffVersion = parseFloat(navigator.userAgent
                 .match(/Firefox\/([0-9]+\.[0-9]+)/)[1]);
         }catch(e){}
         var noRepeatKeyDowns = ffVersion && ffVersion < 4;
+        
+        var iOS = /iphone|ipad/i.test(navigator.userAgent);
 
         ////////////////////////////////////////////////////////////////////////
         // Main entry point
@@ -249,20 +251,26 @@
             }else return null;
         }
         
+        function focusOnPrompt(){
+            inner.addClass('jquery-console-focus');
+            inner.removeClass('jquery-console-nofocus');
+            typer.focus();
+            scrollToBottom();
+        }
+        
         // Handle setting focus
-        var doubleClicked;
         container.click(function(){
-            doubleClicked = false;
-            setTimeout(function(){
-                var sel = getSelection();
-                var hasSelection = sel && String(sel).length > 0;
-                if (!hasSelection){
-                    inner.addClass('jquery-console-focus');
-                    inner.removeClass('jquery-console-nofocus');
-                    typer.focus();
-                    scrollToBottom();
-                }
-            }, 100)
+            if (iOS){
+                focusOnPrompt();
+            }else{
+                setTimeout(function(){
+                    var sel = getSelection();
+                    var hasSelection = sel && String(sel).length > 0;
+                    if (!hasSelection){
+                        focusOnPrompt();
+                    }
+                }, 100);
+            }
             return false;
         });
         
@@ -290,7 +298,7 @@
             dontTypeChar = false;
             var keyCode = e.keyCode;
             
-            console.log('down: ' + keyCode)
+            //console.log('down: ' + keyCode)
             // C-c: cancel the execution
             if(e.ctrlKey && keyCode == 67) {
                 cancelKeyPress = keyCode;
@@ -326,9 +334,9 @@
         typer.keypress(function(e){
 
             var keyCode = e.keyCode || e.which;
-            console.log('which: ' + e.which);
-            console.log('keyCode: ' + e.keyCode);
-            console.log('press: ' + keyCode);
+            //console.log('which: ' + e.which);
+            //console.log('keyCode: ' + e.keyCode);
+            //console.log('press: ' + keyCode);
             if (isIgnorableKey(e)) {
                 return false;
             }

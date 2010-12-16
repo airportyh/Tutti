@@ -104,7 +104,7 @@ var socket
 // intervalID for attempt retries to reconnect if disconnected
 var retryIntervalID
 // Connect to socket.IO server
-function connect(){
+function connect(reconnect){
     io.setPath('/')
     displayData({announcement: 'Connecting...'})
     
@@ -123,15 +123,17 @@ function connect(){
     })
 
     socket.on('disconnect', function(){
-        control.notice('Disconnected from server!')
-        retryIntervalID = setInterval(connect, 5000)
+        displayData({announcement: 'Disconnected from server!'})
+        retryIntervalID = setInterval(function(){
+            connect(true)
+        }, 5000)
     }) 
 
     socket.on('message', didReceiveData)
 
     socket.connect()
 
-    socket.send(JSON.stringify({login: login}))
+    socket.send(JSON.stringify({login: login, reconnect: reconnect}))
 }
 
 // received data from socket

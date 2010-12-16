@@ -161,11 +161,15 @@ function onClientMessage(data) {
         var browsers = clients.map(function(c){return c.browser})
         client.browser = message.login.browser
         client.roomID = roomID
-        client.send(json({announcement: "<br>Welcome to Tutti - interactively run Javascript on multiple browsers!"}))
-        client.send(json({announcement: "===================================================================="}))
-        client.send(json({announcement: "You can execute any Javascript in the shell below."}))
-        client.send(json({browsers:browsers}))
-        client.send(json({announcement: "<br>To connect another browser, just copy-n-paste the current URL into it."}))
+        if (message.reconnect){
+            client.send(json({announcement: "Reconnected!"}))
+        }else{
+            client.send(json({announcement: "<br>Welcome to Tutti - interactively run Javascript on multiple browsers!"}))
+            client.send(json({announcement: "===================================================================="}))
+            client.send(json({announcement: "You can execute any Javascript in the shell below."}))
+            client.send(json({browsers:browsers}))
+            client.send(json({announcement: "<br>To connect another browser, just copy-n-paste the current URL into it."}))
+        }
         clients.push(client)
         //message.sessionId = client.sessionId
         message.browser = client.browser
