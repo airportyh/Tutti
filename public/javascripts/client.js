@@ -99,7 +99,6 @@ function createSandBox(){
         "<" + "\/script>"
     );
 }
-
 // socket.IO socket
 var socket
 // intervalID for attempt retries to reconnect if disconnected

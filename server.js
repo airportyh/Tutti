@@ -14,6 +14,13 @@ var AllConfigs = {
         http: true,
         socket: true
     },
+    // Test environment
+    test: {
+        port: 32224,
+        rooms: true,
+        http: true,
+        socket: true
+    },
     // Normal dev environment
     dev: {
         port: 8080,
