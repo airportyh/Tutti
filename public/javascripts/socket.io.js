@@ -406,7 +406,6 @@ if ('jQuery' in this) jQuery.io = this.io;
 		this._onData(data);
 		var script = doc.getElementsByTagName('script')[0];
 		script.parentNode.removeChild(script);
-		console.log('readyState: ' + this._iframe.readyState)
 	};
 	
 	HTMLFile.prototype._destroy = function(){

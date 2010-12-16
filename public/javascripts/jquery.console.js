@@ -43,53 +43,57 @@
         // Constants
         // Some are enums, data types, others just for optimisation
         var keyCodes = {
-	    // left
-	    37: moveBackward,
-	    // right
-	    39: moveForward,
-	    // up
-	    38: previousHistory,
-	    // down
-	    40: nextHistory,
-	    // backspace
-	    8:  backDelete,
-	    // delete
-	    46: forwardDelete,
-            // end
-	    35: moveToEnd,
-	    // start
-	    36: moveToStart,
-	    // return
-	    13: commandTrigger,
-	    // tab
-	    18: doNothing
-	};
-	var ctrlCodes = {
-	    // C-a
-	    65: moveToStart,
-	    // C-e
-	    69: moveToEnd,
-	    // C-d
-	    68: forwardDelete,
-	    // C-n
-	    78: nextHistory,
-	    // C-p
-	    80: previousHistory,
-	    // C-b
-	    66: moveBackward,
-	    // C-f
-	    70: moveForward,
-	    // C-k
-	    75: deleteUntilEnd
-	};
-	var altCodes = {
-	    // M-f
-	    70: moveToNextWord,
-	    // M-b
-	    66: moveToPreviousWord,
-	    // M-d
-	    68: deleteNextWord
-	};
+        // left
+        37: moveBackward,
+        // right
+        39: moveForward,
+        // up
+        38: previousHistory,
+        // down
+        40: nextHistory,
+        // backspace
+        8:  backDelete,
+        // delete
+        46: forwardDelete,
+        // end
+        35: moveToEnd,
+        // start
+        36: moveToStart,
+        // return
+        13: commandTrigger,
+        // tab
+        18: doNothing
+    };
+    var ctrlCodes = {
+        /*
+        // C-a
+        65: moveToStart,
+        // C-e
+        69: moveToEnd,
+        // C-d
+        68: forwardDelete,
+        // C-n
+        78: nextHistory,
+        // C-p
+        80: previousHistory,
+        // C-b
+        66: moveBackward,
+        // C-f
+        70: moveForward,
+        // C-k
+        75: deleteUntilEnd
+        */
+    };
+    var altCodes = {
+        /*
+        // M-f
+        70: moveToNextWord,
+        // M-b
+        66: moveToPreviousWord,
+        // M-d
+        68: deleteNextWord
+        */
+    };
         var cursor = '<span class="jquery-console-cursor">&nbsp;</span>';
         // Opera only works with this character, not <wbr> or &shy;,
         // but IE6 displays this character, which is bad, so just use
@@ -100,7 +104,7 @@
         // Globals
         var container = $(this);
         var inner = $('<div class="jquery-console-inner"></div>');
-        var typer = $('<input class="jquery-console-typer" type="text">');
+        var typer = $('<textarea class="jquery-console-typer"></textarea>');
         // Prompt
         var promptBox;
         var prompt;
@@ -122,13 +126,23 @@
         // variable below to ignore the keypress event if the keydown
         // event succeeds.
         var cancelKeyPress = 0;
-    	// When this value is false, the prompt will not respond to input
-    	var acceptInput = true;
-    	// When this value is true, the command has been canceled
-    	var cancelCommand = false;
+        var dontTypeChar = false;
+        // When this value is false, the prompt will not respond to input
+        var acceptInput = true;
+        // When this value is true, the command has been canceled
+        var cancelCommand = false;
 
         // External exports object
         var extern = {};
+        
+        // Unfortunate Browser Sniffing Needed for getting FF to repeat
+        // presses holding down backspace key
+        var ffVersion
+        try{
+            ffVersion = parseFloat(navigator.userAgent
+                .match(/Firefox\/([0-9]+\.[0-9]+)/)[1]);
+        }catch(e){}
+        var noRepeatKeyDowns = ffVersion && ffVersion < 4;
 
         ////////////////////////////////////////////////////////////////////////
         // Main entry point
@@ -151,6 +165,7 @@
             extern.typer = typer;
             extern.scrollToBottom = scrollToBottom;
         })();
+        
 
         ////////////////////////////////////////////////////////////////////////
         // Reset terminal
@@ -160,9 +175,9 @@
                 inner.find('div').each(function(){
                     if (!welcome) {
                         $(this).remove();
-		    } else {
-			welcome = false;
-		    }
+            } else {
+            welcome = false;
+            }
                 });
                 newPromptBox();
                 inner.parent().fadeIn(function(){
@@ -209,8 +224,8 @@
         function newPromptBox() {
             column = 0;
             promptText = '';
-	    ringn = 0; // Reset the position of the history ring
-	    enableInput();
+            ringn = 0; // Reset the position of the history ring
+            enableInput();
             promptBox = $('<div class="jquery-console-prompt-box"></div>');
             var label = $('<span class="jquery-console-prompt-label"></span>');
             var labelText = extern.continuedPrompt? continuedPromptLabel : promptLabel;
@@ -223,14 +238,34 @@
         };
 
         ////////////////////////////////////////////////////////////////////////
+        function getSelection()
+        {
+            if (window.getSelection){
+                return String(window.getSelection());
+            }else if (document.getSelection){
+                return String(document.getSelection());
+            }else if (document.selection){
+                return String(document.selection.createRange().text);
+            }else return null;
+        }
+        
         // Handle setting focus
+        var doubleClicked;
         container.click(function(){
-            inner.addClass('jquery-console-focus');
-            inner.removeClass('jquery-console-nofocus');
-            typer.focus();
-            scrollToBottom();
+            doubleClicked = false;
+            setTimeout(function(){
+                var sel = getSelection();
+                var hasSelection = sel && String(sel).length > 0;
+                if (!hasSelection){
+                    inner.addClass('jquery-console-focus');
+                    inner.removeClass('jquery-console-nofocus');
+                    typer.focus();
+                    scrollToBottom();
+                }
+            }, 100)
             return false;
         });
+        
 
         ////////////////////////////////////////////////////////////////////////
         // Handle losing focus
@@ -239,52 +274,94 @@
             inner.addClass('jquery-console-nofocus');
         });
 
+
         ////////////////////////////////////////////////////////////////////////
         // Handle key hit before translation
         // For picking up control characters like up/left/down/right
 
+        function ffSpecialKey(keyCode){
+            return keyCode == 8 ||
+                (keyCode >= 37 && keyCode <= 40)
+        }
+
         typer.keydown(function(e){
             cancelKeyPress = 0;
+            dontTypeChar = false;
             var keyCode = e.keyCode;
-	    // C-c: cancel the execution
-	    if(e.ctrlKey && keyCode == 67) {
-		cancelKeyPress = keyCode;
-		cancelExecution();
-		return false;
-	    }
-	    if (acceptInput) {
-		if (keyCode in keyCodes) {
+            
+            // C-c: cancel the execution
+            if(e.ctrlKey && keyCode == 67) {
+                cancelKeyPress = keyCode;
+                cancelExecution();
+                return false;
+            }
+            if (acceptInput) {
+                if (keyCode in keyCodes) {
+                    if (!noRepeatKeyDowns || !ffSpecialKey(keyCode)){
+                        cancelKeyPress = keyCode;
+                        (keyCodes[keyCode])();
+                    }
+                    return false;
+                } else if (e.ctrlKey && keyCode in ctrlCodes) {
                     cancelKeyPress = keyCode;
-		    (keyCodes[keyCode])();
-		    return false;
-		} else if (e.ctrlKey && keyCode in ctrlCodes) {
+                    (ctrlCodes[keyCode])();
+                    return false;
+                } else if (e.altKey && keyCode in altCodes) {
                     cancelKeyPress = keyCode;
-		    (ctrlCodes[keyCode])();
-		    return false;
-		} else if (e.altKey  && keyCode in altCodes) {
-                    cancelKeyPress = keyCode;
-		    (altCodes[keyCode])();
-		    return false;
-		}
-	    }
+                    (altCodes[keyCode])();
+                    return false;
+                }
+                
+                if (e.ctrlKey || e.metaKey || e.altKey){
+                    dontTypeChar = true;
+                }
+                
+            }
         });
         
         ////////////////////////////////////////////////////////////////////////
         // Handle key press
         typer.keypress(function(e){
+
             var keyCode = e.keyCode || e.which;
             if (isIgnorableKey(e)) {
                 return false;
             }
-            if (acceptInput && cancelKeyPress != keyCode && keyCode >= 32){
+            
+            if (noRepeatKeyDowns && ffSpecialKey(keyCode)){
+                (keyCodes[keyCode])();
+                return false;
+            }else if (acceptInput && cancelKeyPress != keyCode && keyCode >= 32){
                 if (cancelKeyPress) return false;
-                if (typeof config.charInsertTrigger == 'undefined' ||
-                    (typeof config.charInsertTrigger == 'function' &&
-                     config.charInsertTrigger(keyCode,promptText)))
-                    typer.consoleInsert(keyCode);
+                if (!dontTypeChar){
+                    if (typeof config.charInsertTrigger == 'undefined' ||
+                        (typeof config.charInsertTrigger == 'function' &&
+                         config.charInsertTrigger(keyCode,promptText))){
+                        typer.consoleInsert(keyCode);
+                        return false;
+                    }
+                }
             }
             if ($.browser.webkit) return false;
         });
+        
+        if (typer[0].addEventListener){
+            typer[0].addEventListener('paste', function(e){
+                
+                if (e.clipboardData){
+                    e.preventDefault()
+                    var text = e.clipboardData.getData('Text')
+                    extern.promptText(promptText + text)
+                }else{
+                    setTimeout(function(){
+                        var text = typer.val()
+                        
+                        extern.promptText(promptText + text)
+                        typer.val('')
+                    }, 0)
+                }
+            }, false)
+        }
 
         function isIgnorableKey(e) {
             // for now just filter alt+tab that we receive on some platforms when
@@ -317,13 +394,13 @@
             updatePromptDisplay();
         };
 
-	function previousHistory() {
-	    rotateHistory(-1);
-	};
+    function previousHistory() {
+        rotateHistory(-1);
+    };
 
-	function nextHistory() {
-	    rotateHistory(1);
-	};
+    function nextHistory() {
+        rotateHistory(1);
+    };
 
     // Add something to the history ring
     function addToHistory(line){
@@ -342,40 +419,40 @@
         } else return false;
     };
 
-	function backDelete() {
+    function backDelete() {
             if (moveColumn(-1)){
                 deleteCharAtPos();
                 updatePromptDisplay();
             }
-	};
-	
-	function forwardDelete() {
+    };
+    
+    function forwardDelete() {
             if (deleteCharAtPos())
                 updatePromptDisplay();
-	};
+    };
 
-	function deleteUntilEnd() {
-	    while(deleteCharAtPos()) {
-		updatePromptDisplay();
-	    }
-	};
+    function deleteUntilEnd() {
+        while(deleteCharAtPos()) {
+        updatePromptDisplay();
+        }
+    };
 
-	function deleteNextWord() {
-	    // A word is defined within this context as a series of alphanumeric
-	    // characters.
-	    // Delete up to the next alphanumeric character
-	    while(column < promptText.length &&
-		  !isCharAlphanumeric(promptText[column])) {
-		deleteCharAtPos();
-		updatePromptDisplay();
-	    }
-	    // Then, delete until the next non-alphanumeric character
-	    while(column < promptText.length &&
-		  isCharAlphanumeric(promptText[column])) {
-		deleteCharAtPos();
-		updatePromptDisplay();
-	    }
-	};
+    function deleteNextWord() {
+        // A word is defined within this context as a series of alphanumeric
+        // characters.
+        // Delete up to the next alphanumeric character
+        while(column < promptText.length &&
+          !isCharAlphanumeric(promptText[column])) {
+        deleteCharAtPos();
+        updatePromptDisplay();
+        }
+        // Then, delete until the next non-alphanumeric character
+        while(column < promptText.length &&
+          isCharAlphanumeric(promptText[column])) {
+        deleteCharAtPos();
+        updatePromptDisplay();
+        }
+    };
 
     ////////////////////////////////////////////////////////////////////////
     // Validate command and trigger it if valid, or show a validation error
@@ -400,11 +477,11 @@
         inner.attr({ scrollTop: inner.attr("scrollHeight") });;
     };
 
-	function cancelExecution() {
-	    if(typeof config.cancelHandle == 'function') {
-		config.cancelHandle();
-	    }
-	}
+    function cancelExecution() {
+        if(typeof config.cancelHandle == 'function') {
+        config.cancelHandle();
+        }
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // Handle a command
@@ -444,14 +521,14 @@
 
     ////////////////////////////////////////////////////////////////////////
     // Disable input
-	function disableInput() {
-	    acceptInput = false;
-	};
+    function disableInput() {
+        acceptInput = false;
+    };
 
         // Enable input
-	function enableInput() {
-	    acceptInput = true;
-	}
+    function enableInput() {
+        acceptInput = true;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // Reset the prompt in invalid command
@@ -515,67 +592,67 @@
         } else return false;
     };
 
-	function moveForward() {
+    function moveForward() {
             if(moveColumn(1)) {
-		updatePromptDisplay();
-		return true;
-	    }
-	    return false;
-	};
+        updatePromptDisplay();
+        return true;
+        }
+        return false;
+    };
 
-	function moveBackward() {
+    function moveBackward() {
             if(moveColumn(-1)) {
-		updatePromptDisplay();
-		return true;
-	    }
-	    return false;
-	};
+        updatePromptDisplay();
+        return true;
+        }
+        return false;
+    };
 
-	function moveToStart() {
+    function moveToStart() {
             if (moveColumn(-column))
                 updatePromptDisplay();
-	};
+    };
 
-	function moveToEnd() {
+    function moveToEnd() {
             if (moveColumn(promptText.length-column))
                 updatePromptDisplay();
-	};
+    };
 
-	function moveToNextWord() {
-	    while(column < promptText.length &&
-		  !isCharAlphanumeric(promptText[column]) &&
-		  moveForward()) {
-	    }
-	    while(column < promptText.length &&
-		  isCharAlphanumeric(promptText[column]) &&
-		  moveForward()) {
-	    }
-	};
+    function moveToNextWord() {
+        while(column < promptText.length &&
+          !isCharAlphanumeric(promptText[column]) &&
+          moveForward()) {
+        }
+        while(column < promptText.length &&
+          isCharAlphanumeric(promptText[column]) &&
+          moveForward()) {
+        }
+    };
 
-	function moveToPreviousWord() {
-	    // Move backward until we find the first alphanumeric
-	    while(column -1 >= 0 &&
-		  !isCharAlphanumeric(promptText[column-1]) &&
-		  moveBackward()) {
-	    }
-	    // Move until we find the first non-alphanumeric
-	    while(column -1 >= 0 &&
-		  isCharAlphanumeric(promptText[column-1]) &&
-		  moveBackward()) {
-	    }
-	};
+    function moveToPreviousWord() {
+        // Move backward until we find the first alphanumeric
+        while(column -1 >= 0 &&
+          !isCharAlphanumeric(promptText[column-1]) &&
+          moveBackward()) {
+        }
+        // Move until we find the first non-alphanumeric
+        while(column -1 >= 0 &&
+          isCharAlphanumeric(promptText[column-1]) &&
+          moveBackward()) {
+        }
+    };
 
-	function isCharAlphanumeric(charToTest) {
-	    if(typeof charToTest == 'string') {
-		var code = charToTest.charCodeAt();
-		return (code >= 'A'.charCodeAt() && code <= 'Z'.charCodeAt()) ||
-		    (code >= 'a'.charCodeAt() && code <= 'z'.charCodeAt()) ||
-		    (code >= '0'.charCodeAt() && code <= '9'.charCodeAt());
-	    }
-	    return false;
-	};
+    function isCharAlphanumeric(charToTest) {
+        if(typeof charToTest == 'string') {
+        var code = charToTest.charCodeAt();
+        return (code >= 'A'.charCodeAt() && code <= 'Z'.charCodeAt()) ||
+            (code >= 'a'.charCodeAt() && code <= 'z'.charCodeAt()) ||
+            (code >= '0'.charCodeAt() && code <= '9'.charCodeAt());
+        }
+        return false;
+    };
 
-	function doNothing() {};
+    function doNothing() {};
 
         extern.promptText = function(text){
             if (text) {
@@ -616,6 +693,7 @@
             scrollToBottom();
         };
         
+        
         // Simple HTML encoding
         // Simply replace '<', '>' and '&'
         // TODO: Use jQuery's .html() trick, or grab a proper, fast
@@ -626,9 +704,11 @@
                     .replace(/</g,'&lt;')
                     .replace(/</g,'&lt;')
                     .replace(/ /g,'&nbsp;')
-                    .replace(/([^<>&]{10})/g,'$1<wbr>&shy;' + wbr)
+                    //.replace(/([^<>&]{10})/g,'$1<wbr>&shy;' + wbr)
+                    .replace(/\n/g, "<br>")
             );
         };
+        extern.htmlEncode = htmlEncode;
 
         return extern;
     };

@@ -83,17 +83,18 @@ function log(msg){
     displayData(data)
 }
 
+
 // Dean Edwards' sandbox
 function createSandBox(){
-    var iframe = document.createElement("iframe");
-    iframe.style.display = "none";
+    var iframe = document.createElement("iframe")
+    iframe.style.display = "none"
     document.body.appendChild(iframe);
 
     // write a script into the <iframe> and create the sandbox
     frames[frames.length - 1].document.write(
         "<" + "script>"+
         "var MSIE/*@cc_on =1@*/;"+ // sniff
-        "parent.sandbox=MSIE?this:{eval:function(s){return eval(s)}};"+
+        "parent.sandbox=MSIE?this:{eval:function(s){return window.eval(s)}};"+
         "this.console = {log: parent.log};" +
         "<" + "\/script>"
     );
@@ -169,13 +170,13 @@ function displayData(data){
     else if (data.command){
         control.promptText(data.command, 'command')
         control.display('')
-    }else if (data.reply){
+    }else if ('reply' in data){
         var msg = '<span class="browser">' + browser + 
-            ' => </span>' + data.reply
+            ' => </span>' + control.htmlEncode(data.reply)
         control.messageBeforePrompt(msg, 'reply')
-    }else if (data.error){
+    }else if ('error' in data){
         control.messageBeforePrompt('<span class="browser">' + browser + ' => </span>' + data.error, 'error')
-    }else if (data.console){
+    }else if ('console' in data){
         control.messageBeforePrompt('<span class="browser">' + browser + ' : </span>' + data.console, 'console')
     }else if (data.browsers){
         control.messageBeforePrompt('<br>Connected browsers: ' + (data.browsers.join(', ') || 'none'), 'announcement')
@@ -214,7 +215,7 @@ function initConsole(){
                 }
             }
         },
-        autofocus:true,
+        autofocus: true,
         animateScroll:true,
         promptHistory:true
     })
