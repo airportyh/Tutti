@@ -328,7 +328,7 @@
             var keyCode = e.keyCode || e.which;
             console.log('which: ' + e.which);
             console.log('keyCode: ' + e.keyCode);
-            console.log('press: ' + keyCode)
+            console.log('press: ' + keyCode);
             if (isIgnorableKey(e)) {
                 return false;
             }
