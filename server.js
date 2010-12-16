@@ -12,21 +12,24 @@ var AllConfigs = {
         port: 46071,
         rooms: true,
         http: true,
-        socket: true
+        socket: true,
+        db: 'tutti'
     },
     // Test environment
     test: {
         port: 32224,
         rooms: true,
         http: true,
-        socket: true
+        socket: true,
+        db: 'tuttitest'
     },
     // Normal dev environment
     dev: {
         port: 8080,
         rooms: true,
         http: true,
-        socket: true
+        socket: true,
+        db: 'tutti'
     },
     // Standalone dev environment - no multiple rooms, no DB required, just the
     // shell
@@ -57,7 +60,7 @@ app.clients = {
 
 
 // a CouchDB instance to store the rooms info
-var db = config.rooms ? new Couch('tutti') : null
+var db = config.rooms ? new Couch(config.db) : null
 
 function initHTTP(){
 
