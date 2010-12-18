@@ -115,13 +115,14 @@ var socket
 var retryIntervalID
 // Connect to socket.IO server
 function connect(reconnect){
-    io.setPath('/')
     displayData({announcement: 'Connecting...'})
     
     var host = location.hostname
     var port = location.port
     
-    socket = new io.Socket(host, {port:port, 
+    socket = new io.Socket(host, {
+        port:port, 
+        rememberTransport: false,
         transports: ['websocket', 'htmlfile', 'xhr-multipart', 'xhr-polling']
         });
 

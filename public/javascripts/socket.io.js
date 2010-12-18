@@ -1,4 +1,4 @@
-/** Socket.IO 0.5.4 - Built with build.js */
+/** Socket.IO 0.6 - Built with build.js */
 /**
  * Socket.IO client
  * 
@@ -8,14 +8,21 @@
  */
 
 this.io = {
-	version: '0.5.4',
+	version: '0.6',
 	
 	setPath: function(path){
+		if (window.console && console.error) console.error('io.setPath will be removed. Please set the variable WEB_SOCKET_SWF_LOCATION pointing to WebSocketMain.swf');
 		this.path = /\/$/.test(path) ? path : path + '/';
+		WEB_SOCKET_SWF_LOCATION = path + 'lib/vendor/web-socket-js/WebSocketMain.swf';
 	}
 };
 
 if ('jQuery' in this) jQuery.io = this.io;
+
+if (typeof window != 'undefined'){
+  // WEB_SOCKET_SWF_LOCATION = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//cdn.socket.io/' + this.io.version + '/WebSocketMain.swf';
+  WEB_SOCKET_SWF_LOCATION = '/socket.io/lib/vendor/web-socket-js/WebSocketMain.swf';
+}
 /**
  * Socket.IO client
  * 
@@ -33,9 +40,7 @@ if ('jQuery' in this) jQuery.io = this.io;
 		ios: false,
 
 		load: function(fn){
-			if (document.readyState == 'complete' ||
-			    document.readyState == 'loaded'
-			    || _pageLoaded) return fn();
+			if (/loaded|complete/.test(document.readyState) || _pageLoaded) return fn();
 			if ('attachEvent' in window){
 				window.attachEvent('onload', fn);
 			} else {
@@ -59,12 +64,19 @@ if ('jQuery' in this) jQuery.io = this.io;
 
 		isArray: function(obj){
 			return Object.prototype.toString.call(obj) === '[object Array]';
-		}
+		},
+		
+    merge: function(target, additional){
+      for (var i in additional)
+        if (additional.hasOwnProperty(i))
+          target[i] = additional[i];
+    }
 
 	};
 
 	io.util.ios = /iphone|ipad/i.test(navigator.userAgent);
 	io.util.android = /android/i.test(navigator.userAgent);
+	io.util.opera = /opera/i.test(navigator.userAgent);
 
 	io.util.load(function(){
 		_pageLoaded = true;
@@ -85,9 +97,24 @@ if ('jQuery' in this) jQuery.io = this.io;
 	
 	var frame = '~m~',
 	
+	stringify = function(message){
+		if (Object.prototype.toString.call(message) == '[object Object]'){
+			if (!('JSON' in window)){
+				if ('console' in window && console.error) console.error('Trying to encode as JSON, but JSON.stringify is missing.');
+				return '{ "$error": "Invalid message" }';
+			}
+			return '~j~' + JSON.stringify(message);
+		} else {
+			return String(message);
+		}
+	};
+	
 	Transport = io.Transport = function(base, options){
 		this.base = base;
-		this.options = options;
+		this.options = {
+			timeout: 15000 // based on heartbeat interval default
+		};
+		io.util.merge(this.options, options);
 	};
 
 	Transport.prototype.send = function(){
@@ -106,7 +133,7 @@ if ('jQuery' in this) jQuery.io = this.io;
 		var ret = '', message,
 				messages = io.util.isArray(messages) ? messages : [messages];
 		for (var i = 0, l = messages.length; i < l; i++){
-			message = messages[i] === null || messages[i] === undefined ? '' : String(messages[i]);
+			message = messages[i] === null || messages[i] === undefined ? '' : stringify(messages[i]);
 			ret += frame + message.length + frame + message;
 		}
 		return ret;
@@ -123,7 +150,7 @@ if ('jQuery' in this) jQuery.io = this.io;
 				if (data.substr(i, 1) == n){
 					number += n;
 				} else {	
-					data = data.substr(number.length + frame.length)
+					data = data.substr(number.length + frame.length);
 					number = Number(number);
 					break;
 				} 
@@ -135,20 +162,35 @@ if ('jQuery' in this) jQuery.io = this.io;
 	};
 	
 	Transport.prototype._onData = function(data){
+		this._setTimeout();
 		var msgs = this._decode(data);
-		if (msgs){
+		if (msgs && msgs.length){
 			for (var i = 0, l = msgs.length; i < l; i++){
 				this._onMessage(msgs[i]);
 			}
 		}
 	};
 	
+	Transport.prototype._setTimeout = function(){
+		var self = this;
+		if (this._timeout) clearTimeout(this._timeout);
+		this._timeout = setTimeout(function(){
+			self._onTimeout();
+		}, this.options.timeout);
+	};
+	
+	Transport.prototype._onTimeout = function(){
+		this._onDisconnect();
+	};
+	
 	Transport.prototype._onMessage = function(message){
-		if (!('sessionid' in this)){
+		if (!this.sessionid){
 			this.sessionid = message;
 			this._onConnect();
 		} else if (message.substr(0, 3) == '~h~'){
 			this._onHeartbeat(message.substr(3));
+		} else if (message.substr(0, 3) == '~j~'){
+			this.base._onMessage(JSON.parse(message.substr(3)));
 		} else {
 			this.base._onMessage(message);
 		}
@@ -160,12 +202,15 @@ if ('jQuery' in this) jQuery.io = this.io;
 	
 	Transport.prototype._onConnect = function(){
 		this.connected = true;
+		this.connecting = false;
 		this.base._onConnect();
+		this._setTimeout();
 	};
 
 	Transport.prototype._onDisconnect = function(){
-		if (!this.connected) return;
+		this.connecting = false;
 		this.connected = false;
+		this.sessionid = null;
 		this.base._onDisconnect();
 	};
 
@@ -190,32 +235,39 @@ if ('jQuery' in this) jQuery.io = this.io;
 (function(){
 	
 	var empty = new Function,
+	    
+	XMLHttpRequestCORS = (function(){
+		if (!('XMLHttpRequest' in window)) return false;
+		// CORS feature detection
+		var a = new XMLHttpRequest();
+		return a.withCredentials != undefined;
+	})(),
 	
 	request = function(xdomain){
 		if ('XDomainRequest' in window && xdomain) return new XDomainRequest();
-		if ('XMLHttpRequest' in window) return new XMLHttpRequest();
+		if ('XMLHttpRequest' in window && (!xdomain || XMLHttpRequestCORS)) return new XMLHttpRequest();
+		if (!xdomain){
+			try {
+				var a = new ActiveXObject('MSXML2.XMLHTTP');
+				return a;
+			} catch(e){}
 		
-		try {
-			var a = new ActiveXObject('MSXML2.XMLHTTP');
-			return a;
-		} catch(e){}
-		
-		try {
-			var b = new ActiveXObject('Microsoft.XMLHTTP');
-			return b;
-		} catch(e){}
-		
+			try {
+				var b = new ActiveXObject('Microsoft.XMLHTTP');
+				return b;
+			} catch(e){}
+		}
 		return false;
 	},
 	
 	XHR = io.Transport.XHR = function(){
 		io.Transport.apply(this, arguments);
+		this._sendBuffer = [];
 	};
 	
 	io.util.inherit(XHR, io.Transport);
 	
 	XHR.prototype.connect = function(){
-		if (!('_sendBuffer' in this)) this._sendBuffer = [];
 		this._get();
 		return this;
 	};
@@ -247,45 +299,59 @@ if ('jQuery' in this) jQuery.io = this.io;
 			if (self._sendXhr.readyState == 4){
 				self._sendXhr.onreadystatechange = empty;
 				try { status = self._sendXhr.status; } catch(e){}
+				self._posting = false;
 				if (status == 200){
-					self._posting = false;
 					self._checkSend();
+				} else {
+					self._onDisconnect();
 				}
 			}
 		};
 		this._sendXhr.send('data=' + encodeURIComponent(data));
-	},
+	};
 	
 	XHR.prototype.disconnect = function(){
+		// send disconnection signal
+		this._onDisconnect();
+		return this;
+	};
+	
+	XHR.prototype._onDisconnect = function(){
 		if (this._xhr){
 			this._xhr.onreadystatechange = this._xhr.onload = empty;
 			this._xhr.abort();
+			this._xhr = null;
 		}
 		if (this._sendXhr){
-		  try{
-  			this._sendXhr.onreadystatechange = this._sendXhr.onload = empty;
-  			this._sendXhr.abort();
-  		}catch(e){}
+		    try{
+    			this._sendXhr.onreadystatechange = this._sendXhr.onload = empty;
+    			this._sendXhr.abort();
+    		}catch(e){}
+			this._sendXhr = null;
 		}
-		this._onDisconnect();
-		return this;
-	}
+		this._sendBuffer = [];
+		io.Transport.prototype._onDisconnect.call(this);
+	};
 	
 	XHR.prototype._request = function(url, method, multipart){
 		var req = request(this.base._isXDomain());
 		if (multipart) req.multipart = true;
 		req.open(method || 'GET', this._prepareUrl() + (url ? '/' + url : ''));
-		if (method == 'POST'){
+		if (method == 'POST' && 'setRequestHeader' in req){
 			req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded; charset=utf-8');
 		}
 		return req;
 	};
 	
-	XHR.check = function(){
+	XHR.check = function(xdomain){
 		try {
-			if (request()) return true;
+			if (request(xdomain)) return true;
 		} catch(e){}
 		return false;
+	};
+	
+	XHR.xdomainCheck = function(){
+		return XHR.check(true);
 	};
 	
 	XHR.request = request;
@@ -318,12 +384,12 @@ if ('jQuery' in this) jQuery.io = this.io;
 	};
 	
 	WS.prototype.send = function(data){
-		this.socket.send(this._encode(data));
+		if (this.socket) this.socket.send(this._encode(data));
 		return this;
-	}
+	};
 	
 	WS.prototype.disconnect = function(){
-		this.socket.close();
+		if (this.socket) this.socket.close();
 		return this;
 	};
 	
@@ -343,7 +409,7 @@ if ('jQuery' in this) jQuery.io = this.io;
 	
 	WS.check = function(){
 		// we make sure WebSocket is not confounded with a previously loaded flash WebSocket
-		return 'WebSocket' in window && !('__initialize' in WebSocket);
+		return 'WebSocket' in window && WebSocket.prototype && ( WebSocket.prototype.send && !!WebSocket.prototype.send.toString().match(/native/i)) && typeof WebSocket !== "undefined";
 	};
 
 	WS.xdomainCheck = function(){
@@ -387,21 +453,6 @@ if ('jQuery' in this) jQuery.io = this.io;
 		this._iframe = this._doc.createElement('iframe');
 		_iframeC.appendChild(this._iframe);
 		this._iframe.src = this._prepareUrl() + '/' + (+ new Date);
-		var self = this;
-		this._checkIframeCompleteIntervalID = setInterval(function(){
-		  self._checkIframeComplete()
-	  }, 5000)
-	  
-	};
-	
-	HTMLFile.prototype._checkIframeComplete = function(){
-	  if (this._iframe.readyState == 'complete'){
-	    if (this._checkIframeCompleteIntervalID){
-  	    clearInterval(this._checkIframeCompleteIntervalID);
-  	    delete this._checkIframeCompleteIntervalID;
-	    }
-	    this.disconnect();
-	  }
 	};
 	
 	HTMLFile.prototype._ = function(data, doc){
@@ -409,12 +460,14 @@ if ('jQuery' in this) jQuery.io = this.io;
 		var script = doc.getElementsByTagName('script')[0];
 		script.parentNode.removeChild(script);
 	};
-	
-	HTMLFile.prototype._destroy = function(){
-		this._iframe.src = 'about:blank';
-		this._doc = null;
-		CollectGarbage();
-	};
+
+  HTMLFile.prototype._destroy = function(){
+    if (this._iframe){
+      this._iframe.src = 'about:blank';
+      this._doc = null;
+      CollectGarbage();
+    }
+  };
 	
 	HTMLFile.prototype.disconnect = function(){
 		this._destroy();
@@ -432,7 +485,8 @@ if ('jQuery' in this) jQuery.io = this.io;
 	};
 
 	HTMLFile.xdomainCheck = function(){
-		return false; // send() is not cross domain. we need to POST to an iframe to fix it
+		// we can probably do handling for sub-domains, we should test that it's cross domain but a subdomain here
+		return false;
 	};
 	
 })();
@@ -458,21 +512,13 @@ if ('jQuery' in this) jQuery.io = this.io;
 		var self = this;
 		this._xhr = this._request('', 'GET', true);
 		this._xhr.onreadystatechange = function(){
-			if (self._xhr.readyState == 3){
-			    self._onData(self._xhr.responseText);
-			}else if (self._xhr.readyState == 4){
-			    console.log('connect ended')
-                if (self._xhr.status != 200){
-                    console.log('disconnecting')
-                    self.disconnect();
-                }  
-			}
+			if (self._xhr.readyState == 3) self._onData(self._xhr.responseText);
 		};
 		this._xhr.send(null);
 	};
 	
 	XHRMultipart.check = function(){
-		return 'XMLHttpRequest' in window && 'multipart' in XMLHttpRequest.prototype;
+		return 'XMLHttpRequest' in window && 'prototype' in XMLHttpRequest && 'multipart' in XMLHttpRequest.prototype;
 	};
 
 	XHRMultipart.xdomainCheck = function(){
@@ -514,32 +560,21 @@ if ('jQuery' in this) jQuery.io = this.io;
 	};
 
 	XHRPolling.prototype._get = function(){
-	  
 		var self = this;
-		var url = + new Date
-		this._xhr = this._request(url, 'GET');
-		/*if ('onload' in this._xhr){
-		  console.log('setting onload')
-			this._xhr.onload = function(){
-			  console.log('onload: ' + url + ' ' + this.responseText)
-				if (this.responseText.length) self._onData(this.responseText);
-				self.connect();
-			};
-		} else {*/
-			this._xhr.onreadystatechange = function(){
-				var status;
-				if (self._xhr.readyState == 4){
-					self._xhr.onreadystatechange = empty;
-					try { status = self._xhr.status; } catch(e){}
-					if (status == 200){
-						if (self._xhr.responseText.length) self._onData(self._xhr.responseText);
-						self.connect();
-					}else{
-					  self.disconnect();
-					}
+		this._xhr = this._request(+ new Date, 'GET');
+		this._xhr.onreadystatechange = function(){
+			var status;
+			if (self._xhr.readyState == 4){
+				self._xhr.onreadystatechange = empty;
+				try { status = self._xhr.status; } catch(e){}
+				if (status == 200){
+					self._onData(self._xhr.responseText);
+					self._get();
+				} else {
+					self._onDisconnect();
 				}
-			};
-		//}
+			}
+		};
 		this._xhr.send(null);
 	};
 
@@ -548,10 +583,126 @@ if ('jQuery' in this) jQuery.io = this.io;
 	};
 
 	XHRPolling.xdomainCheck = function(){
-		return 'XDomainRequest' in window || 'XMLHttpRequest' in window;
+		return io.Transport.XHR.xdomainCheck();
 	};
 
 })();
+/**
+ * Socket.IO client
+ * 
+ * @author Guillermo Rauch <guillermo@learnboost.com>
+ * @license The MIT license.
+ * @copyright Copyright (c) 2010 LearnBoost <dev@learnboost.com>
+ */
+
+io.JSONP = [];
+
+JSONPPolling = io.Transport['jsonp-polling'] = function(){
+	io.Transport.XHR.apply(this, arguments);
+	this._insertAt = document.getElementsByTagName('script')[0];
+	this._index = io.JSONP.length;
+	io.JSONP.push(this);
+};
+
+io.util.inherit(JSONPPolling, io.Transport['xhr-polling']);
+
+JSONPPolling.prototype.type = 'jsonp-polling';
+
+JSONPPolling.prototype._send = function(data){
+	var self = this;
+	if (!('_form' in this)){
+		var form = document.createElement('FORM'),
+		    area = document.createElement('TEXTAREA'),
+		    id = this._iframeId = 'socket_io_iframe_' + this._index,
+		    iframe;
+
+		form.style.position = 'absolute';
+		form.style.top = '-1000px';
+		form.style.left = '-1000px';
+		form.target = id;
+		form.method = 'POST';
+		form.action = this._prepareUrl() + '/' + (+new Date) + '/' + this._index;
+		area.name = 'data';
+		form.appendChild(area);
+		this._insertAt.parentNode.insertBefore(form, this._insertAt);
+		document.body.appendChild(form);
+
+		this._form = form;
+		this._area = area;
+	}
+
+	function complete(){
+		initIframe();
+		self._posting = false;
+		self._checkSend();
+	};
+
+	function initIframe(){
+		if (self._iframe){
+			self._form.removeChild(self._iframe);
+		} 
+
+		try {
+			// ie6 dynamic iframes with target="" support (thanks Chris Lambacher)
+			iframe = document.createElement('<iframe name="'+ self._iframeId +'">');
+		} catch(e){
+			iframe = document.createElement('iframe');
+			iframe.name = self._iframeId;
+		}
+
+		iframe.id = self._iframeId;
+
+		self._form.appendChild(iframe);
+		self._iframe = iframe;
+	};
+
+	initIframe();
+
+	this._posting = true;
+	this._area.value = data;
+
+	try {
+		this._form.submit();
+	} catch(e){}
+
+	if (this._iframe.attachEvent){
+		iframe.onreadystatechange = function(){
+			if (self._iframe.readyState == 'complete') complete();
+		};
+	} else {
+		this._iframe.onload = complete;
+	}
+};
+
+JSONPPolling.prototype._get = function(){
+	var self = this,
+			script = document.createElement('SCRIPT');
+	if (this._script){
+		this._script.parentNode.removeChild(this._script);
+		this._script = null;
+	}
+	script.async = true;
+	script.src = this._prepareUrl() + '/' + (+new Date) + '/' + this._index;
+	script.onerror = function(){
+		self._onDisconnect();
+	};
+	this._insertAt.parentNode.insertBefore(script, this._insertAt);
+	this._script = script;
+};
+
+JSONPPolling.prototype._ = function(){
+	this._onData.apply(this, arguments);
+	this._get();
+	return this;
+};
+
+JSONPPolling.check = function(){
+	return true;
+};
+
+JSONPPolling.xdomainCheck = function(){
+	return true;
+};
 /**
  * Socket.IO client
  * 
@@ -567,16 +718,22 @@ if ('jQuery' in this) jQuery.io = this.io;
 		this.options = {
 			secure: false,
 			document: document,
-			heartbeatInterval: 4000,
 			port: document.location.port || 80,
 			resource: 'socket.io',
-			transports: ['websocket', 'htmlfile', 'xhr-multipart', 'xhr-polling'],
-			transportOptions: {},
-			rememberTransport: false
+			transports: ['websocket', 'flashsocket', 'htmlfile', 'xhr-multipart', 'xhr-polling', 'jsonp-polling'],
+			transportOptions: {
+				'xhr-polling': {
+					timeout: 25000 // based on polling duration default
+				},
+				'jsonp-polling': {
+					timeout: 25000
+				}
+			},
+			connectTimeout: 5000,
+			tryTransportsOnConnectTimeout: true,
+			rememberTransport: true
 		};
-		for (var i in options) 
-		    if (this.options.hasOwnProperty(i))
-		        this.options[i] = options[i];
+		io.util.merge(this.options, options);
 		this.connected = false;
 		this.connecting = false;
 		this._events = {};
@@ -584,11 +741,14 @@ if ('jQuery' in this) jQuery.io = this.io;
 		if (!this.transport && 'console' in window) console.error('No transport available');
 	};
 	
-	Socket.prototype.getTransport = function(){
-		var transports = this.options.transports, match;
-		if (this.options.rememberTransport){
-			match = this.options.document.cookie.match('(?:^|;)\\s*socket\.io=([^;]*)');
-			if (match) transports = [decodeURIComponent(match[1])];
+	Socket.prototype.getTransport = function(override){
+		var transports = override || this.options.transports, match;
+		if (this.options.rememberTransport && !override){
+			match = this.options.document.cookie.match('(?:^|;)\\s*socketio=([^;]*)');
+			if (match){
+				this._rememberedTransport = true;
+				transports = [decodeURIComponent(match[1])];
+			}
 		} 
 		for (var i = 0, transport; transport = transports[i]; i++){
 			if (io.Transport[transport] 
@@ -601,10 +761,29 @@ if ('jQuery' in this) jQuery.io = this.io;
 	};
 	
 	Socket.prototype.connect = function(){
-		if (this.transport && !this.connected && !this.connecting){
+		if (this.transport && !this.connected){
+			if (this.connecting) this.disconnect();
 			this.connecting = true;
 			this.transport.connect();
-		}      
+			if (this.options.connectTimeout){
+				var self = this;
+				setTimeout(function(){
+					if (!self.connected){
+						self.disconnect();
+						if (self.options.tryTransportsOnConnectTimeout && !self._rememberedTransport){
+							var remainingTransports = [], transports = self.options.transports;
+							for (var i = 0, transport; transport = transports[i]; i++){
+								if (transport != self.transport.type) remainingTransports.push(transport);
+							}
+							if (remainingTransports.length){
+								self.transport = self.getTransport(remainingTransports);
+								self.connect();
+							}
+						}
+					}
+				}, this.options.connectTimeout);
+			}
+		}
 		return this;
 	};
 	
@@ -627,9 +806,8 @@ if ('jQuery' in this) jQuery.io = this.io;
 	
 	Socket.prototype.fire = function(name, args){
 		if (name in this._events){
-		    var i, ii; 
-		    for (i = 0, ii = this._events[name].length; i < ii; i++) 
-				this._events[name][i].apply(this, args || []);
+			for (var i = 0, ii = this._events[name].length; i < ii; i++) 
+				this._events[name][i].apply(this, args === undefined ? [] : args);
 		}
 		return this;
 	};
@@ -663,7 +841,7 @@ if ('jQuery' in this) jQuery.io = this.io;
 		this.connected = true;
 		this.connecting = false;
 		this._doQueue();
-		if (this.options.rememberTransport) this.options.document.cookie = 'socket.io=' + encodeURIComponent(this.transport.type);
+		if (this.options.rememberTransport) this.options.document.cookie = 'socketio=' + encodeURIComponent(this.transport.type);
 		this.fire('connect');
 	};
 	
@@ -672,7 +850,11 @@ if ('jQuery' in this) jQuery.io = this.io;
 	};
 	
 	Socket.prototype._onDisconnect = function(){
-		this.fire('disconnect');
+		var wasConnected = this.connected;
+		this.connected = false;
+		this.connecting = false;
+		this._queueStack = [];
+		if (wasConnected) this.fire('disconnect');
 	};
 	
 	Socket.prototype.addListener = Socket.prototype.addEvent = Socket.prototype.addEventListener = Socket.prototype.on;
