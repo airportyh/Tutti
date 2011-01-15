@@ -191,8 +191,10 @@ function displayData(data){
     if (data.announcement)
         control.messageBeforePrompt(data.announcement, 'announcement')
     else if (data.command){
+        var pt = control.promptText()
         control.promptText(data.command, 'command')
         control.display('')
+        control.promptText(pt, 'command')
     }else if ('reply' in data){
         var msg = '<span class="browser">' + browser + 
             ' => </span>' + control.htmlEncode(data.reply)
