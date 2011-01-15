@@ -52,6 +52,8 @@ var config = AllConfigs[env]
 
 // Create the server
 var app = express.createServer()
+// app-wide count of currently connected clients
+var numClients = 0
 // An app-wide dictionary of roomID -> clients
 app.clients = {
     // For `standalone` mode we only have one roomID: `root`
@@ -175,7 +177,8 @@ function onClientMessage(data) {
         message.browser = client.browser
 
         broadcast(client, {announcement:client.browser + ' joined'})
-        
+        numClients++
+        console.log('numClients: ' + numClients)
     }
     
     var client = this
@@ -218,6 +221,7 @@ function onClientMessage(data) {
 
 // when a socket disconnects
 function onClientDisconnect() {
+    numClients--
     var client = this
     if (client.browser) {
         broadcast(client, {
