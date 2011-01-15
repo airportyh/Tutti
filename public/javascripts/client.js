@@ -1,4 +1,4 @@
-// given this browser a name based on the `userAgent`
+// give this browser a name based on the `userAgent`
 // display name for this browser
 var browserName = (function(){
     var userAgent = navigator.userAgent
@@ -98,7 +98,7 @@ function log(msg){
 function createSandBox(){
     var iframe = document.createElement("iframe")
     iframe.style.display = "none"
-    document.body.appendChild(iframe);
+    document.body.appendChild(iframe)
 
     // write a script into the <iframe> and create the sandbox
     frames[frames.length - 1].document.write(
@@ -107,7 +107,15 @@ function createSandBox(){
         "parent.sandbox=MSIE?this:{eval:function(s){return window.eval(s)}};"+
         "this.console = {log: parent.log};" +
         "<" + "\/script>"
-    );
+    )
+    sandbox.eval(
+        "var alert = function(){ throw new Error('Sorry, can\\'t alert() in here.')};\
+        var print = function(){ throw new Error('Sorry, can\\'t print() in here.')};\
+        var confirm = function(){ throw new Error('Sorry, can\\'t confirm() in here.')};\
+        var open = function(){ throw new Error('Sorry, can\\'t open() in here.')};\
+        var parent = undefined;"
+        )
+    
 }
 // socket.IO socket
 var socket

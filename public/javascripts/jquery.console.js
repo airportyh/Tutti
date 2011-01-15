@@ -355,7 +355,6 @@
                     }
                 }
             }
-            if ($.browser.webkit) return false;
         });
         
         if (typer[0].addEventListener){
