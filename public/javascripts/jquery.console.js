@@ -65,9 +65,16 @@
         18: doNothing
     };
     var ctrlCodes = {
+        // Ctrl-right
+        39: moveToEnd,
+        // Ctrl-left
+        37: moveToStart
+        
+        
         /*
         // C-a
-        65: moveToStart,
+        65: moveToStart
+        
         // C-e
         69: moveToEnd,
         // C-d
@@ -85,6 +92,8 @@
         */
     };
     var altCodes = {
+        39: moveToNextWord,
+        37: moveToPreviousWord
         /*
         // M-f
         70: moveToNextWord,
@@ -145,6 +154,7 @@
         var noRepeatKeyDowns = ffVersion && ffVersion < 4;
         
         var iOS = /iphone|ipad/i.test(navigator.userAgent);
+        var isMac = /Mac/.test(navigator.userAgent);
 
         ////////////////////////////////////////////////////////////////////////
         // Main entry point
@@ -292,27 +302,24 @@
             return keyCode == 8 ||
                 (keyCode >= 37 && keyCode <= 40);
         }
+        
+        function isControlKey(e){
+            if (isMac) return e.metaKey
+            else return e.ctrlKey
+        }
 
         typer.keydown(function(e){
             cancelKeyPress = 0;
             dontTypeChar = false;
             var keyCode = e.keyCode;
-            
-            //console.log('down: ' + keyCode)
             // C-c: cancel the execution
-            if(e.ctrlKey && keyCode == 67) {
+            if(isControlKey(e) && keyCode == 67) {
                 cancelKeyPress = keyCode;
                 cancelExecution();
                 return false;
             }
             if (acceptInput) {
-                if (keyCode in keyCodes) {
-                    if (!noRepeatKeyDowns || !ffSpecialKey(e)){
-                        cancelKeyPress = keyCode;
-                        (keyCodes[keyCode])();
-                    }
-                    return false;
-                } else if (e.ctrlKey && keyCode in ctrlCodes) {
+                if (isControlKey(e) && keyCode in ctrlCodes) {
                     cancelKeyPress = keyCode;
                     (ctrlCodes[keyCode])();
                     return false;
@@ -320,9 +327,15 @@
                     cancelKeyPress = keyCode;
                     (altCodes[keyCode])();
                     return false;
-                }
+                } else if (keyCode in keyCodes) {
+                    if (!noRepeatKeyDowns || !ffSpecialKey(e)){
+                        cancelKeyPress = keyCode;
+                        (keyCodes[keyCode])();
+                    }
+                    return false;
+                } 
                 
-                if (e.ctrlKey || e.metaKey || e.altKey){
+                if (isControlKey(e) || e.altKey){
                     dontTypeChar = true;
                 }
                 
@@ -332,7 +345,6 @@
         ////////////////////////////////////////////////////////////////////////
         // Handle key press
         typer.keypress(function(e){
-
             var keyCode = e.keyCode || e.which;
             //console.log('which: ' + e.which);
             //console.log('keyCode: ' + e.keyCode);
