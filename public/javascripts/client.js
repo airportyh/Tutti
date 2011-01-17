@@ -93,7 +93,7 @@ function log(msg){
     displayData(data)
 }
 
-var sandBoxEval
+
 // based on Dean Edwards' sandbox
 function createSandBox(){
     var iframe = document.createElement("iframe")
@@ -104,10 +104,7 @@ function createSandBox(){
     frames[frames.length - 1].document.write(
         "<" + "script>"+
         "var MSIE/*@cc_on =1@*/;"+ // sniff
-        "(function(){\
-            var myeval = window.eval;\
-            parent.sandbox=MSIE?this:{eval:function(s){return myeval(s)}};\
-        })();" +
+        "parent.sandbox=MSIE?this:{eval:function(s){return window.eval(s)}};"+
         "this.console = {log: parent.log};" +
         "<" + "\/script>"
     )
@@ -118,7 +115,9 @@ function createSandBox(){
         var open = function(){ throw new Error('Sorry, can\\'t open() in here.')};\
         var parent = undefined;"
         )
-    sandBoxEval = sandbox.eval
+}
+function sandBoxEval(s){
+    return sandbox.eval(s)
 }
 
 // socket.IO socket
