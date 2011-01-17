@@ -119,8 +119,6 @@ function createSandBox(){
 }
 // socket.IO socket
 var socket
-// intervalID for attempt retries to reconnect if disconnected
-var retryIntervalID
 // Connect to socket.IO server
 function connect(reconnect){
     displayData({announcement: 'Connecting...'})
@@ -135,17 +133,14 @@ function connect(reconnect){
         });
 
     socket.on('connect', function(){
+        socket.send(JSON.stringify({login: login, reconnect: reconnect}))
         trackEvent('Connection', 'connect', reconnect ? 'reconnect': 'initial')
-        if (retryIntervalID){
-            clearInterval(retryIntervalID)
-            retryIntervalID = null
-        }
     })
 
     socket.on('disconnect', function(){
         trackEvent('Connection', 'disconnect')
         displayData({announcement: 'Disconnected from server!'})
-        retryIntervalID = setInterval(function(){
+        setTimeout(function(){
             connect(true)
         }, 5000)
     }) 
@@ -153,8 +148,6 @@ function connect(reconnect){
     socket.on('message', didReceiveData)
 
     socket.connect()
-
-    socket.send(JSON.stringify({login: login, reconnect: reconnect}))
 }
 
 // received data from socket
