@@ -93,8 +93,8 @@ function log(msg){
     displayData(data)
 }
 
-
-// Dean Edwards' sandbox
+var sandBoxEval
+// based on Dean Edwards' sandbox
 function createSandBox(){
     var iframe = document.createElement("iframe")
     iframe.style.display = "none"
@@ -104,7 +104,10 @@ function createSandBox(){
     frames[frames.length - 1].document.write(
         "<" + "script>"+
         "var MSIE/*@cc_on =1@*/;"+ // sniff
-        "parent.sandbox=MSIE?this:{eval:function(s){return window.eval(s)}};"+
+        "(function(){\
+            var myeval = window.eval;\
+            parent.sandbox=MSIE?this:{eval:function(s){return myeval(s)}};\
+        })();" +
         "this.console = {log: parent.log};" +
         "<" + "\/script>"
     )
@@ -115,8 +118,9 @@ function createSandBox(){
         var open = function(){ throw new Error('Sorry, can\\'t open() in here.')};\
         var parent = undefined;"
         )
-    
+    sandBoxEval = sandbox.eval
 }
+
 // socket.IO socket
 var socket
 // Connect to socket.IO server
@@ -158,7 +162,7 @@ function didReceiveData(data) {
     if (data.command){
         var reply
         try{
-            var result = String(sandbox.eval(data.command))
+            var result = String(sandBoxEval(data.command))
             reply = {reply: result}
         }catch(e){
             var emsg = String(e)
@@ -221,7 +225,7 @@ function initConsole(){
                 sendData({command: line})
                 var reply
                 try{
-                    var result = String(sandbox.eval(line))
+                    var result = String(sandBoxEval(line))
                     reply = {reply: result}
                 }catch(e){
                     var emsg = String(e)
