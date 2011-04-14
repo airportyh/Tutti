@@ -93,13 +93,14 @@ function log(msg){
     displayData(data)
 }
 
-
+var sandboxIframe
 // based on Dean Edwards' sandbox
 function createSandBox(){
-    var iframe = document.createElement("iframe")
-    iframe.src = '/blank.html'
-    iframe.style.display = "none"
-    document.body.appendChild(iframe)
+    sandboxIframe = document.createElement("iframe")
+    sandboxIframe.id = 'sandbox'
+    sandboxIframe.src = '/blank.html'
+    sandboxIframe.style.display = "none"
+    document.body.appendChild(sandboxIframe)
 }
 function sandBoxEval(s){
     return sandbox.eval(s)
@@ -138,6 +139,13 @@ function connect(reconnect){
     socket.connect()
 }
 
+// reset the console, including all text, command history and the document
+function resetConsole(){
+    sandboxIframe.parentNode.removeChild(sandboxIframe)
+    control.reset()
+    createSandBox()
+}
+
 // received data from socket
 function didReceiveData(data) {
     data = JSON.parse(data)
@@ -157,6 +165,8 @@ function didReceiveData(data) {
         displayData(reply)
         trackEvent('Command', 'completed')
         sendData(reply)
+    }else if (data.reset){
+        resetConsole()
     }
 
 }

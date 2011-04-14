@@ -156,6 +156,7 @@ function broadcast(client, message){
 
 // called when a messages comes from a socket
 function onClientMessage(data) {
+    console.log("DATA: " + data)
     function onLoggedIn(roomID, message){
         clients = getClients(roomID)
         
