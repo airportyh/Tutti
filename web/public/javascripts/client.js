@@ -34,6 +34,14 @@ var browserName = (function(){
     return userAgent
 })()
 
+// `map()` method for arrays for convinience
+Array.prototype.map = function(f){
+    var retval = []
+    for (var i = 0; i < this.length; i++)
+        retval.push(f(this[i]))
+    return retval
+}
+
 // put together login info
 var login
 if (location.pathname == '/'){
@@ -164,9 +172,12 @@ function didReceiveData(data) {
         }
         displayData(reply)
         trackEvent('Command', 'completed')
+        if ('id' in data)
+            reply.id = data.id
         sendData(reply)
     }else if (data.reset){
         resetConsole()
+        sendData({reset: true, id: data.id})
     }
 
 }
@@ -191,11 +202,14 @@ function displayData(data){
             ' => </span>' + control.htmlEncode(data.reply)
         control.messageBeforePrompt(msg, 'reply')
     }else if ('error' in data){
-        control.messageBeforePrompt('<span class="browser">' + browser + ' => </span>' + data.error, 'error')
+        control.messageBeforePrompt('<span class="browser">' + 
+            browser + ' => </span>' + data.error, 'error')
     }else if ('console' in data){
-        control.messageBeforePrompt('<span class="browser">' + browser + ' : </span>' + data.console, 'console')
+        control.messageBeforePrompt('<span class="browser">' + 
+            browser + ' : </span>' + data.console, 'console')
     }else if (data.browsers){
-        control.messageBeforePrompt('<br>Connected browsers: ' + (data.browsers.join(', ') || 'none'), 'announcement')
+        control.messageBeforePrompt('<br>Connected browsers: ' + 
+            (data.browsers.map(function(b){return b.browser}).join(', ') || 'none'), 'announcement')
     }
 }
 

@@ -160,7 +160,13 @@ function onClientMessage(data) {
     function onLoggedIn(roomID, message){
         clients = getClients(roomID)
         
-        var browsers = clients.map(function(c){return c.browser})
+        var browsers = clients.reduce(function(curr, c){
+            if (c.browser) curr.push({
+                sessionId: c.sessionId, 
+                browser: c.browser
+            })
+            return curr
+        }, [])
         client.browser = message.login.browser
         client.roomID = roomID
         if (message.reconnect){
@@ -196,12 +202,6 @@ function onClientMessage(data) {
                     client._onDisconnect()
                     return
                 }
-
-                if (room.secret !== message.login.secret){
-                    client.send({announcement:"Login failed! You gave the wrong secret token for this room. Bye!"})
-                    client._onDisconnect()
-                    return
-                }
                 
                 onLoggedIn(roomID, message)
             })
@@ -212,6 +212,7 @@ function onClientMessage(data) {
         }
         
     }else if(client.roomID){
+        message.sessionId = client.sessionId
         message.browser = client.browser
         broadcast(client, message)
     }else{
