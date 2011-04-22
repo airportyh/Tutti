@@ -5,6 +5,7 @@ var express = require('express')
 var fs = require('fs')
 var Couch = require('couchdb').Couch
 var json = json = JSON.stringify
+var log = require('util').debug
 
 var AllConfigs = {
     // Production socket.io domain
@@ -44,10 +45,10 @@ var AllConfigs = {
 // Figure out the environment to run in and setup the config
 var env = process.argv[2] || 'standalone'
 if (!(env in AllConfigs)){
-    console.log('Unknown environment: ' + env)
+    log('Unknown environment: ' + env)
     process.exit()
 }
-console.log('Starting "' + env + '" environment.')
+log('Starting "' + env + '" environment.')
 var config = AllConfigs[env]
 
 // Create the server
@@ -84,7 +85,7 @@ function initHTTP(){
             db.post({}, function(reply){
                 var roomID = reply.id
                 var path = '/' + roomID
-                console.log('room created ' + path)
+                log('room created ' + path)
                 res.redirect(path)
             })
         })
@@ -127,7 +128,7 @@ function handleErrs(f, disconnect){
         try{
             f.apply(this, arguments)
         }catch(e){
-            console.log(e)
+            log(e)
             if (disconnect)
                 this._onDisconnect()
         }
@@ -156,7 +157,7 @@ function broadcast(client, message){
 
 // called when a messages comes from a socket
 function onClientMessage(data) {
-    console.log("DATA: " + data)
+    log("DATA: " + data)
     function onLoggedIn(roomID, message){
         clients = getClients(roomID)
         
@@ -184,7 +185,7 @@ function onClientMessage(data) {
 
         broadcast(client, {announcement:client.browser + ' joined'})
         numClients++
-        console.log('numClients: ' + numClients)
+        log('numClients: ' + numClients)
     }
     
     var client = this
@@ -245,4 +246,4 @@ if (config.socket)
 
 // start the server
 app.listen(config.port)
-console.log("Tutti listening on port " + config.port + '.')
+log("Tutti listening on port " + config.port + '.')

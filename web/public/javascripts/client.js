@@ -177,7 +177,7 @@ function didReceiveData(data) {
         sendData(reply)
     }else if (data.reset){
         resetConsole()
-        sendData({reset: true, id: data.id})
+        //sendData({reset: true, id: data.id})
     }
 
 }
