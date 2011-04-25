@@ -1,0 +1,30 @@
+{
+   "name": "tutti",
+   "description": "Tutti - a fun way to browser test. Includes both a tutti terminal application(formerly tuttiterm), and a Tutti driver library.",
+   "keywords": [
+       "command line",
+       "javascript",
+       "testing",
+       "cli",
+       "node",
+       "browser"
+   ],
+   "version": "0.0.1",
+   "author": {
+      "name" : "Toby Ho", 
+      "email" : "airportyh@gmail.com",
+      "url" : "http://tobyho.com"  
+   },
+   "repository": {
+       "type": "git",
+       "url": "http://github.com/airportyh/tutti.git"
+   },
+   "bugs": "http://github.com/airportyh/tutti/issues",
+   "engines": [
+       "node >= 0.4.1"
+   ],
+   "main": "./tutti.js",
+   "license" : "MIT",
+   "dependencies": {},
+   "bin" : { "tutti" : "./term.js" }
+}
