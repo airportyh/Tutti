@@ -56,7 +56,7 @@ Couch.prototype = {
   	  request.write(JSON.stringify(data), "utf8");
   	request.addListener('response', function(response) {
   	    var responseBody = ""
-  		response.setBodyEncoding("utf8")
+  		//response.setBodyEncoding("utf8")
   		response.addListener("data", function(chunk) {
   		    responseBody += chunk
   		})

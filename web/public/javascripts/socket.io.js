@@ -1,4 +1,4 @@
-/** Socket.IO 0.6 - Built with build.js */
+/** Socket.IO 0.6.2 - Built with build.js */
 /**
  * Socket.IO client
  * 
@@ -7,13 +7,13 @@
  * @copyright Copyright (c) 2010 LearnBoost <dev@learnboost.com>
  */
 
-this.io = {
-	version: '0.6',
+var io = this.io = {
+	version: '0.6.2',
 	
 	setPath: function(path){
 		if (window.console && console.error) console.error('io.setPath will be removed. Please set the variable WEB_SOCKET_SWF_LOCATION pointing to WebSocketMain.swf');
 		this.path = /\/$/.test(path) ? path : path + '/';
-		WEB_SOCKET_SWF_LOCATION = path + 'lib/vendor/web-socket-js/WebSocketMain.swf';
+    WEB_SOCKET_SWF_LOCATION = path + 'lib/vendor/web-socket-js/WebSocketMain.swf';
 	}
 };
 
@@ -21,8 +21,10 @@ if ('jQuery' in this) jQuery.io = this.io;
 
 if (typeof window != 'undefined'){
   // WEB_SOCKET_SWF_LOCATION = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//cdn.socket.io/' + this.io.version + '/WebSocketMain.swf';
-  WEB_SOCKET_SWF_LOCATION = '/socket.io/lib/vendor/web-socket-js/WebSocketMain.swf';
+  if (typeof WEB_SOCKET_SWF_LOCATION === 'undefined')
+    WEB_SOCKET_SWF_LOCATION = '/socket.io/lib/vendor/web-socket-js/WebSocketMain.swf';
 }
+
 /**
  * Socket.IO client
  * 
@@ -32,6 +34,7 @@ if (typeof window != 'undefined'){
  */
 
 (function(){
+	var io = this.io;
 
 	var _pageLoaded = false;
 
@@ -83,6 +86,7 @@ if (typeof window != 'undefined'){
 	});
 
 })();
+
 /**
  * Socket.IO client
  * 
@@ -94,6 +98,7 @@ if (typeof window != 'undefined'){
 // abstract
 
 (function(){
+	var io = this.io;
 	
 	var frame = '~m~',
 	
@@ -233,6 +238,7 @@ if (typeof window != 'undefined'){
  */
 
 (function(){
+	var io = this.io;
 	
 	var empty = new Function,
 	    
@@ -318,15 +324,17 @@ if (typeof window != 'undefined'){
 	
 	XHR.prototype._onDisconnect = function(){
 		if (this._xhr){
-			this._xhr.onreadystatechange = this._xhr.onload = empty;
-			this._xhr.abort();
+			this._xhr.onreadystatechange = empty;
+      try {
+        this._xhr.abort();
+      } catch(e){}
 			this._xhr = null;
 		}
 		if (this._sendXhr){
-		    try{
-    			this._sendXhr.onreadystatechange = this._sendXhr.onload = empty;
-    			this._sendXhr.abort();
-    		}catch(e){}
+      this._sendXhr.onreadystatechange = empty;
+      try {
+        this._sendXhr.abort();
+      } catch(e){}
 			this._sendXhr = null;
 		}
 		this._sendBuffer = [];
@@ -357,6 +365,7 @@ if (typeof window != 'undefined'){
 	XHR.request = request;
 	
 })();
+
 /**
  * Socket.IO client
  * 
@@ -366,6 +375,7 @@ if (typeof window != 'undefined'){
  */
 
 (function(){
+	var io = this.io;
 	
 	var WS = io.Transport.websocket = function(){
 		io.Transport.apply(this, arguments);
@@ -380,6 +390,7 @@ if (typeof window != 'undefined'){
 		this.socket = new WebSocket(this._prepareUrl());
 		this.socket.onmessage = function(ev){ self._onData(ev.data); };
 		this.socket.onclose = function(ev){ self._onClose(); };
+    this.socket.onerror = function(e){ self._onError(e); };
 		return this;
 	};
 	
@@ -397,6 +408,10 @@ if (typeof window != 'undefined'){
 		this._onDisconnect();
 		return this;
 	};
+
+  WS.prototype._onError = function(e){
+    this.base.emit('error', [e]);
+  };
 	
 	WS.prototype._prepareUrl = function(){
 		return (this.base.options.secure ? 'wss' : 'ws') 
@@ -417,6 +432,7 @@ if (typeof window != 'undefined'){
 	};
 	
 })();
+
 /**
  * Socket.IO client
  * 
@@ -426,6 +442,7 @@ if (typeof window != 'undefined'){
  */
 
 (function(){
+	var io = this.io;
 	
 	var HTMLFile = io.Transport.htmlfile = function(){
 		io.Transport.XHR.apply(this, arguments);
@@ -499,6 +516,7 @@ if (typeof window != 'undefined'){
  */
 
 (function(){
+	var io = this.io;
 	
 	var XHRMultipart = io.Transport['xhr-multipart'] = function(){
 		io.Transport.XHR.apply(this, arguments);
@@ -512,7 +530,7 @@ if (typeof window != 'undefined'){
 		var self = this;
 		this._xhr = this._request('', 'GET', true);
 		this._xhr.onreadystatechange = function(){
-			if (self._xhr.readyState == 3) self._onData(self._xhr.responseText);
+			if (self._xhr.readyState == 4) self._onData(self._xhr.responseText);
 		};
 		this._xhr.send(null);
 	};
@@ -526,6 +544,7 @@ if (typeof window != 'undefined'){
 	};
 	
 })();
+
 /**
  * Socket.IO client
  * 
@@ -535,6 +554,7 @@ if (typeof window != 'undefined'){
  */
 
 (function(){
+	var io = this.io;
 
 	var empty = new Function(),
 
@@ -562,19 +582,19 @@ if (typeof window != 'undefined'){
 	XHRPolling.prototype._get = function(){
 		var self = this;
 		this._xhr = this._request(+ new Date, 'GET');
-		this._xhr.onreadystatechange = function(){
-			var status;
-			if (self._xhr.readyState == 4){
-				self._xhr.onreadystatechange = empty;
-				try { status = self._xhr.status; } catch(e){}
-				if (status == 200){
-					self._onData(self._xhr.responseText);
-					self._get();
-				} else {
-					self._onDisconnect();
-				}
-			}
-		};
+    this._xhr.onreadystatechange = function(){
+      var status;
+      if (self._xhr.readyState == 4){
+        self._xhr.onreadystatechange = empty;
+        try { status = self._xhr.status; } catch(e){}
+        if (status == 200){
+          self._onData(self._xhr.responseText);
+          self._get();
+        } else {
+          self._onDisconnect();
+        }
+      }
+    };
 		this._xhr.send(null);
 	};
 
@@ -587,122 +607,7 @@ if (typeof window != 'undefined'){
 	};
 
 })();
-/**
- * Socket.IO client
- * 
- * @author Guillermo Rauch <guillermo@learnboost.com>
- * @license The MIT license.
- * @copyright Copyright (c) 2010 LearnBoost <dev@learnboost.com>
- */
 
-io.JSONP = [];
-
-JSONPPolling = io.Transport['jsonp-polling'] = function(){
-	io.Transport.XHR.apply(this, arguments);
-	this._insertAt = document.getElementsByTagName('script')[0];
-	this._index = io.JSONP.length;
-	io.JSONP.push(this);
-};
-
-io.util.inherit(JSONPPolling, io.Transport['xhr-polling']);
-
-JSONPPolling.prototype.type = 'jsonp-polling';
-
-JSONPPolling.prototype._send = function(data){
-	var self = this;
-	if (!('_form' in this)){
-		var form = document.createElement('FORM'),
-		    area = document.createElement('TEXTAREA'),
-		    id = this._iframeId = 'socket_io_iframe_' + this._index,
-		    iframe;
-
-		form.style.position = 'absolute';
-		form.style.top = '-1000px';
-		form.style.left = '-1000px';
-		form.target = id;
-		form.method = 'POST';
-		form.action = this._prepareUrl() + '/' + (+new Date) + '/' + this._index;
-		area.name = 'data';
-		form.appendChild(area);
-		this._insertAt.parentNode.insertBefore(form, this._insertAt);
-		document.body.appendChild(form);
-
-		this._form = form;
-		this._area = area;
-	}
-
-	function complete(){
-		initIframe();
-		self._posting = false;
-		self._checkSend();
-	};
-
-	function initIframe(){
-		if (self._iframe){
-			self._form.removeChild(self._iframe);
-		} 
-
-		try {
-			// ie6 dynamic iframes with target="" support (thanks Chris Lambacher)
-			iframe = document.createElement('<iframe name="'+ self._iframeId +'">');
-		} catch(e){
-			iframe = document.createElement('iframe');
-			iframe.name = self._iframeId;
-		}
-
-		iframe.id = self._iframeId;
-
-		self._form.appendChild(iframe);
-		self._iframe = iframe;
-	};
-
-	initIframe();
-
-	this._posting = true;
-	this._area.value = data;
-
-	try {
-		this._form.submit();
-	} catch(e){}
-
-	if (this._iframe.attachEvent){
-		iframe.onreadystatechange = function(){
-			if (self._iframe.readyState == 'complete') complete();
-		};
-	} else {
-		this._iframe.onload = complete;
-	}
-};
-
-JSONPPolling.prototype._get = function(){
-	var self = this,
-			script = document.createElement('SCRIPT');
-	if (this._script){
-		this._script.parentNode.removeChild(this._script);
-		this._script = null;
-	}
-	script.async = true;
-	script.src = this._prepareUrl() + '/' + (+new Date) + '/' + this._index;
-	script.onerror = function(){
-		self._onDisconnect();
-	};
-	this._insertAt.parentNode.insertBefore(script, this._insertAt);
-	this._script = script;
-};
-
-JSONPPolling.prototype._ = function(){
-	this._onData.apply(this, arguments);
-	this._get();
-	return this;
-};
-
-JSONPPolling.check = function(){
-	return true;
-};
-
-JSONPPolling.xdomainCheck = function(){
-	return true;
-};
 /**
  * Socket.IO client
  * 
@@ -712,6 +617,127 @@ JSONPPolling.xdomainCheck = function(){
  */
 
 (function(){
+	var io = this.io;
+	
+	io.JSONP = [];
+	
+	JSONPPolling = io.Transport['jsonp-polling'] = function(){
+		io.Transport.XHR.apply(this, arguments);
+		this._insertAt = document.getElementsByTagName('script')[0];
+		this._index = io.JSONP.length;
+		io.JSONP.push(this);
+	};
+	
+	io.util.inherit(JSONPPolling, io.Transport['xhr-polling']);
+	
+	JSONPPolling.prototype.type = 'jsonp-polling';
+	
+	JSONPPolling.prototype._send = function(data){
+		var self = this;
+		if (!('_form' in this)){
+			var form = document.createElement('FORM'),
+				area = document.createElement('TEXTAREA'),
+				id = this._iframeId = 'socket_io_iframe_' + this._index,
+				iframe;
+	
+			form.style.position = 'absolute';
+			form.style.top = '-1000px';
+			form.style.left = '-1000px';
+			form.target = id;
+			form.method = 'POST';
+			form.action = this._prepareUrl() + '/' + (+new Date) + '/' + this._index;
+			area.name = 'data';
+			form.appendChild(area);
+			this._insertAt.parentNode.insertBefore(form, this._insertAt);
+			document.body.appendChild(form);
+	
+			this._form = form;
+			this._area = area;
+		}
+	
+		function complete(){
+			initIframe();
+			self._posting = false;
+			self._checkSend();
+		};
+	
+		function initIframe(){
+			if (self._iframe){
+				self._form.removeChild(self._iframe);
+			} 
+	
+			try {
+				// ie6 dynamic iframes with target="" support (thanks Chris Lambacher)
+				iframe = document.createElement('<iframe name="'+ self._iframeId +'">');
+			} catch(e){
+				iframe = document.createElement('iframe');
+				iframe.name = self._iframeId;
+			}
+	
+			iframe.id = self._iframeId;
+	
+			self._form.appendChild(iframe);
+			self._iframe = iframe;
+		};
+	
+		initIframe();
+	
+		this._posting = true;
+		this._area.value = data;
+	
+		try {
+			this._form.submit();
+		} catch(e){}
+	
+		if (this._iframe.attachEvent){
+			iframe.onreadystatechange = function(){
+				if (self._iframe.readyState == 'complete') complete();
+			};
+		} else {
+			this._iframe.onload = complete;
+		}
+	};
+	
+	JSONPPolling.prototype._get = function(){
+		var self = this,
+				script = document.createElement('SCRIPT');
+		if (this._script){
+			this._script.parentNode.removeChild(this._script);
+			this._script = null;
+		}
+		script.async = true;
+		script.src = this._prepareUrl() + '/' + (+new Date) + '/' + this._index;
+		script.onerror = function(){
+			self._onDisconnect();
+		};
+		this._insertAt.parentNode.insertBefore(script, this._insertAt);
+		this._script = script;
+	};
+	
+	JSONPPolling.prototype._ = function(){
+		this._onData.apply(this, arguments);
+		this._get();
+		return this;
+	};
+	
+	JSONPPolling.check = function(){
+		return true;
+	};
+	
+	JSONPPolling.xdomainCheck = function(){
+		return true;
+	};
+})();
+/**
+ * Socket.IO client
+ * 
+ * @author Guillermo Rauch <guillermo@learnboost.com>
+ * @license The MIT license.
+ * @copyright Copyright (c) 2010 LearnBoost <dev@learnboost.com>
+ */
+
+(function(){
+	var io = this.io;
 	
 	var Socket = io.Socket = function(host, options){
 		this.host = host || document.domain;
@@ -730,6 +756,9 @@ JSONPPolling.xdomainCheck = function(){
 				}
 			},
 			connectTimeout: 5000,
+			reconnect: true,
+			reconnectionDelay: 500,
+			maxReconnectionAttempts: 10,
 			tryTransportsOnConnectTimeout: true,
 			rememberTransport: true
 		};
@@ -762,25 +791,27 @@ JSONPPolling.xdomainCheck = function(){
 	
 	Socket.prototype.connect = function(){
 		if (this.transport && !this.connected){
-			if (this.connecting) this.disconnect();
+			if (this.connecting) this.disconnect(true);
 			this.connecting = true;
+			this.emit('connecting', [this.transport.type]);
 			this.transport.connect();
 			if (this.options.connectTimeout){
 				var self = this;
-				setTimeout(function(){
+				this.connectTimeoutTimer = setTimeout(function(){
 					if (!self.connected){
-						self.disconnect();
+						self.disconnect(true);
 						if (self.options.tryTransportsOnConnectTimeout && !self._rememberedTransport){
-							var remainingTransports = [], transports = self.options.transports;
-							for (var i = 0, transport; transport = transports[i]; i++){
-								if (transport != self.transport.type) remainingTransports.push(transport);
-							}
-							if (remainingTransports.length){
-								self.transport = self.getTransport(remainingTransports);
+							if(!self._remainingTransports) self._remainingTransports = self.options.transports.slice(0);
+							var transports = self._remainingTransports;
+							while(transports.length > 0 && transports.splice(0,1)[0] != self.transport.type){}
+							if(transports.length){
+								self.transport = self.getTransport(transports);
 								self.connect();
 							}
 						}
+						if(!self._remainingTransports || self._remainingTransports.length == 0) self.emit('connect_failed');
 					}
+					if(self._remainingTransports && self._remainingTransports.length == 0) delete self._remainingTransports;
 				}, this.options.connectTimeout);
 			}
 		}
@@ -793,7 +824,9 @@ JSONPPolling.xdomainCheck = function(){
 		return this;
 	};
 	
-	Socket.prototype.disconnect = function(){
+	Socket.prototype.disconnect = function(reconnect){
+    if (this.connectTimeoutTimer) clearTimeout(this.connectTimeoutTimer);
+		if (!reconnect) this.options.reconnect = false;
 		this.transport.disconnect();
 		return this;
 	};
@@ -804,14 +837,15 @@ JSONPPolling.xdomainCheck = function(){
 		return this;
 	};
 	
-	Socket.prototype.fire = function(name, args){
-		if (name in this._events){
-			for (var i = 0, ii = this._events[name].length; i < ii; i++) 
-				this._events[name][i].apply(this, args === undefined ? [] : args);
-		}
-		return this;
-	};
-	
+  Socket.prototype.emit = function(name, args){
+    if (name in this._events){
+      var events = this._events[name].concat();
+      for (var i = 0, ii = events.length; i < ii; i++)
+        events[i].apply(this, args === undefined ? [] : args);
+    }
+    return this;
+  };
+
 	Socket.prototype.removeEvent = function(name, fn){
 		if (name in this._events){
 			for (var a = 0, l = this._events[name].length; a < l; a++)
@@ -834,7 +868,8 @@ JSONPPolling.xdomainCheck = function(){
 	};
 	
 	Socket.prototype._isXDomain = function(){
-		return this.host !== document.domain;
+    var locPort = window.location.port || 80;
+		return this.host !== document.domain || this.options.port != locPort;
 	};
 	
 	Socket.prototype._onConnect = function(){
@@ -842,11 +877,11 @@ JSONPPolling.xdomainCheck = function(){
 		this.connecting = false;
 		this._doQueue();
 		if (this.options.rememberTransport) this.options.document.cookie = 'socketio=' + encodeURIComponent(this.transport.type);
-		this.fire('connect');
+		this.emit('connect');
 	};
 	
 	Socket.prototype._onMessage = function(data){
-		this.fire('message', [data]);
+		this.emit('message', [data]);
 	};
 	
 	Socket.prototype._onDisconnect = function(){
@@ -854,9 +889,69 @@ JSONPPolling.xdomainCheck = function(){
 		this.connected = false;
 		this.connecting = false;
 		this._queueStack = [];
-		if (wasConnected) this.fire('disconnect');
+		if (wasConnected){
+			this.emit('disconnect');
+			if (this.options.reconnect && !this.reconnecting) this._onReconnect();
+		}
 	};
 	
+	Socket.prototype._onReconnect = function(){
+		this.reconnecting = true;
+		this.reconnectionAttempts = 0;
+		this.reconnectionDelay = this.options.reconnectionDelay;
+		
+		var self = this
+			, tryTransportsOnConnectTimeout = this.options.tryTransportsOnConnectTimeout
+			, rememberTransport = this.options.rememberTransport;
+		
+		function reset(){
+			if(self.connected) self.emit('reconnect',[self.transport.type,self.reconnectionAttempts]);
+			self.removeEvent('connect_failed', maybeReconnect).removeEvent('connect', maybeReconnect);
+			delete self.reconnecting;
+			delete self.reconnectionAttempts;
+			delete self.reconnectionDelay;
+			delete self.reconnectionTimer;
+			delete self.redoTransports;
+			self.options.tryTransportsOnConnectTimeout = tryTransportsOnConnectTimeout;
+			self.options.rememberTransport = rememberTransport;
+			
+			return;
+		};
+		
+		function maybeReconnect(){
+			if (!self.reconnecting) return;
+			if (!self.connected){
+				if (self.connecting && self.reconnecting) return self.reconnectionTimer = setTimeout(maybeReconnect, 1000);
+				
+				if (self.reconnectionAttempts++ >= self.options.maxReconnectionAttempts){
+					if (!self.redoTransports){
+						self.on('connect_failed', maybeReconnect);
+						self.options.tryTransportsOnConnectTimeout = true;
+						self.transport = self.getTransport(self.options.transports); // overwrite with all enabled transports
+						self.redoTransports = true;
+						self.connect();
+					} else {
+						self.emit('reconnect_failed');
+						reset();
+					}
+				} else {
+					self.reconnectionDelay *= 2; // exponential backoff
+					self.connect();
+					self.emit('reconnecting', [self.reconnectionDelay,self.reconnectionAttempts]);
+					self.reconnectionTimer = setTimeout(maybeReconnect, self.reconnectionDelay);
+				}
+			} else {
+				reset();
+			}
+		};
+		this.options.tryTransportsOnConnectTimeout = false;
+		this.reconnectionTimer = setTimeout(maybeReconnect, this.reconnectionDelay);
+		
+		this.on('connect', maybeReconnect);
+	};
+
+  Socket.prototype.fire = Socket.prototype.emit;
 	Socket.prototype.addListener = Socket.prototype.addEvent = Socket.prototype.addEventListener = Socket.prototype.on;
+	Socket.prototype.removeListener = Socket.prototype.removeEventListener = Socket.prototype.removeEvent;
 	
 })();

@@ -1,13 +1,12 @@
 {
-   "name": "tutti",
-   "description": "Tutti - a fun way to browser test. Includes both a terminal application(CLI), and a driver library.",
+   "name": "tuttiserver",
+   "description": "The Tutti Server.",
    "keywords": [
-       "command line",
        "javascript",
        "testing",
-       "cli",
        "node",
-       "browser"
+       "browser",
+       "server"
    ],
    "version": "0.0.1",
    "author": {
@@ -23,11 +22,10 @@
    "engines": [
        "node >= 0.4.1"
    ],
-   "main": "./lib/tutti.js",
-   "directories": {
-      "./lib": "lib" 
-   },
    "license" : "MIT",
-   "dependencies": {},
-   "bin" : { "tutti" : "./term.js" }
+   "dependencies": {
+       "express": ">= 2.2.2",
+       "socket.io": ">= 0.6.17"
+   },
+   "bin" : { "tuttiserver" : "./server.js" }
 }

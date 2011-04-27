@@ -19,11 +19,11 @@
   
       <ul>
         <li>Firefox 2.0, 3.6 and 4 beta</li>
-        <li>Chrome 8.0</li>
+        <li>Chrome 8.0 - 10.0</li>
         <li>Safari 5.0</li>
         <li>Safari 4 Mobile for iPad and iPhone</li>
-        <li>Opera 10</li>
-        <li>Internet Explorer 6, 7, and 8</li>
+        <li>Opera 10, 11</li>
+        <li>Internet Explorer 6, 7, 8 and 9</li>
       </ul>
   
       <p>To get started, you simply create a room with <i>browser 1</i>, and then copy-n-paste the URL to <i>browser 2</i>, <i>browser 3</i>, <i>browser 4</i> and so on. Are you ready to give it a go?</p>
@@ -32,9 +32,9 @@
         <div class="clear"></div>
       </form>
       <script>
-        if (location.hostname == 'tutti.tobyho.com'){
+        if (location.hostname == 'tutti.tobyho.com' || location.hostname == 'tuttijs.com'){
           // ugly hack for prod environment cuz I don't feel like a template
-          var url = 'http://' + location.hostname + ':' + 46071 + '/create_room'
+          var url = 'http://tuttijs.com:' + 46071 + '/create_room'
           document.getElementById('form').setAttribute('action', url)
         }
       </script>

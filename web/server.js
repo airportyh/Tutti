@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 require.paths.unshift(__dirname + '/lib')
 
 var io = require('socket.io')
@@ -5,7 +6,7 @@ var express = require('express')
 var fs = require('fs')
 var Couch = require('couchdb').Couch
 var json = json = JSON.stringify
-var log = require('util').debug
+var log = console.log
 
 var AllConfigs = {
     // Production socket.io domain
@@ -53,8 +54,6 @@ var config = AllConfigs[env]
 
 // Create the server
 var app = express.createServer()
-// app-wide count of currently connected clients
-var numClients = 0
 // An app-wide dictionary of roomID -> clients
 app.clients = {
     // For `standalone` mode we only have one roomID: `root`
@@ -69,7 +68,7 @@ function initHTTP(){
 
     // server static files on ./public
     app.configure(function(){
-        app.use(express.staticProvider(__dirname + '/public'))
+        app.use(express.static(__dirname + '/public'))
     })
 
     if (config.rooms){
@@ -146,64 +145,66 @@ function getClients(roomID){
 }
 
 // *my* broadcast, which only broadcasts within the same room
-function broadcast(client, message){
+function broadcast(client, message, all){
     var clients = getClients(client.roomID)
     // broadcasts to other peers in the same room
     clients.forEach(function(peer){
-        if (peer !== client)
+        if (all || (peer !== client))
             peer.send(json(message))
     })
 }
 
+function getBrowsers(clients){
+    return clients.reduce(function(curr, c){
+        if (c.browser) curr.push({
+            sessionId: c.sessionId, 
+            browser: c.browser
+        })
+        return curr
+    }, [])
+}
+
+
+
 // called when a messages comes from a socket
 function onClientMessage(data) {
-    log("DATA: " + data)
+    
+    
+    //log("DATA: " + data)
     function onLoggedIn(roomID, message){
+        var clients
         clients = getClients(roomID)
         
-        var browsers = clients.reduce(function(curr, c){
-            if (c.browser) curr.push({
-                sessionId: c.sessionId, 
-                browser: c.browser
-            })
-            return curr
-        }, [])
+        var browsers = getBrowsers(clients)
         client.browser = message.login.browser
+        client.term = message.login.term
         client.roomID = roomID
-        if (message.reconnect){
-            client.send(json({announcement: "Reconnected!"}))
-        }else{
-            client.send(json({announcement: "<br>Welcome to Tutti - interactively run Javascript on multiple browsers!"}))
-            client.send(json({announcement: "===================================================================="}))
-            client.send(json({announcement: "You can execute any Javascript in the shell below."}))
-            client.send(json({browsers:browsers}))
-            client.send(json({announcement: "<br>To connect another browser, just copy-n-paste the current URL into it."}))
-        }
+        
         clients.push(client)
         //message.sessionId = client.sessionId
         message.browser = client.browser
 
-        broadcast(client, {announcement:client.browser + ' joined'})
-        numClients++
-        log('numClients: ' + numClients)
+        var name = client.browser || client.term
+        client.send(json({connected: true}))
+        if (name)
+            broadcast(client, {announcement:name + ' joined'})
+        log('Clients in room: ' + clients.length)
     }
     
     var client = this
     var message = JSON.parse(data)
     if (message.login) {
-        
-        var clients
         var roomID
+        
         if (config.rooms){
             roomID = message.login.roomID
             
             db.get(roomID, function(room){
                 if (!room){
-                    client.send({announcement:"Room does not exist. Try going back to the front page and creating another room."})
+                    client.send(json({announcement:"Room does not exist. Try going back to the front page and creating another room."}))
                     client._onDisconnect()
                     return
                 }
-                
                 onLoggedIn(roomID, message)
             })
             
@@ -211,11 +212,15 @@ function onClientMessage(data) {
             roomID = 'root'
             onLoggedIn(roomID, message)
         }
-        
     }else if(client.roomID){
-        message.sessionId = client.sessionId
-        message.browser = client.browser
-        broadcast(client, message)
+        if (message.command === ':browsers'){
+            var browsers = getBrowsers(getClients(client.roomID))
+            client.send(json({browsers: browsers}))
+        }else{
+            message.sessionId = client.sessionId
+            message.browser = client.browser
+            broadcast(client, message)
+        }
     }else{
         client._onDisconnect()
     }
@@ -223,7 +228,6 @@ function onClientMessage(data) {
 
 // when a socket disconnects
 function onClientDisconnect() {
-    numClients--
     var client = this
     if (client.browser) {
         broadcast(client, {

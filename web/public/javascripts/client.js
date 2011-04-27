@@ -117,7 +117,8 @@ function sandBoxEval(s){
 // socket.IO socket
 var socket
 // Connect to socket.IO server
-function connect(reconnect){
+function connect(){
+    var firstLogin = true
     displayData({announcement: 'Connecting...'})
     
     var host = location.hostname
@@ -130,16 +131,22 @@ function connect(reconnect){
         });
 
     socket.on('connect', function(){
-        socket.send(JSON.stringify({login: login, reconnect: reconnect}))
-        trackEvent('Connection', 'connect', reconnect ? 'reconnect': 'initial')
+        socket.send(JSON.stringify({login: login}))
+        print('Connected.', 'reply')
+        if (firstLogin){
+            print('<br>')
+            print('Welcome to Tutti - interactive Javascript shell')
+            print('----------------------------------------------------------------------')
+            execute(':browsers')
+            execute(':help')
+            firstLogin = false
+        }
+        trackEvent('Connection', 'connect')
     })
 
     socket.on('disconnect', function(){
         trackEvent('Connection', 'disconnect')
-        displayData({announcement: 'Disconnected from server!'})
-        setTimeout(function(){
-            connect(true)
-        }, 5000)
+        displayData({announcement: 'Connection lost.'})
     }) 
 
     socket.on('message', didReceiveData)
@@ -156,35 +163,60 @@ function resetConsole(){
 
 // received data from socket
 function didReceiveData(data) {
+    console.log(data)
     data = JSON.parse(data)
     displayData(data)
-
     if (data.command){
-        var reply
-        try{
-            var result = String(sandBoxEval(data.command))
-            reply = {reply: result}
-        }catch(e){
-            var emsg = String(e)
-            if (emsg.charAt(0) == '[')
-                emsg = 'Error: ' + e.message
-            reply = {error: emsg}
+        var reply = execute(data.command)
+        if (reply){
+            trackEvent('Command', 'completed')
+            displayData(reply)
+            sendData(reply)
         }
-        displayData(reply)
-        trackEvent('Command', 'completed')
-        if ('id' in data)
-            reply.id = data.id
-        sendData(reply)
-    }else if (data.reset){
-        resetConsole()
-        //sendData({reset: true, id: data.id})
     }
-
 }
 
 // send data as JSON
 function sendData(data){
     socket.send(JSON.stringify(data))
+}
+
+function print(msg, clazz){
+    clazz = clazz || 'announcement'
+    control.messageBeforePrompt(msg, clazz)
+}
+
+function printUsage(){    
+    print('You can execute any Javascript in the shell below.')
+    print('To connect another browser, just copy-n-paste the current URL into it.')
+    print('The following commands are also available:')
+    print('<br/>')
+    print('&nbsp;:help - print out this message')
+    print('&nbsp;:browsers - show connected browsers')
+    print('&nbsp;:reset - reset the Javascript sandbox')
+    print('<br/>')
+}
+
+function execute(command){
+    if (command === ':reset')
+        resetConsole()
+    else if (command === ':help')
+        printUsage()
+    else
+        return executeJS(command)
+}
+function executeJS(command){
+    var reply
+    try{
+        var result = String(sandBoxEval(command))
+        reply = {reply: result}
+    }catch(e){
+        var emsg = String(e)
+        if (emsg.charAt(0) == '[')
+            emsg = 'Error: ' + e.message
+        reply = {error: emsg}
+    }
+    return reply
 }
 
 // display a message to the console or notice area
@@ -208,7 +240,7 @@ function displayData(data){
         control.messageBeforePrompt('<span class="browser">' + 
             browser + ' : </span>' + data.console, 'console')
     }else if (data.browsers){
-        control.messageBeforePrompt('<br>Connected browsers: ' + 
+        control.messageBeforePrompt('Connected browsers: ' + 
             (data.browsers.map(function(b){return b.browser}).join(', ') || 'none'), 'announcement')
     }
 }
@@ -230,17 +262,11 @@ function initConsole(){
                 control.continuedPrompt = false
                 control.commandResult('')
                 trackEvent('Command', 'issued')
-                sendData({command: line})
+                if (line !== ':help') 
+                    sendData({command: line})
                 var reply
-                try{
-                    var result = String(sandBoxEval(line))
-                    reply = {reply: result}
-                }catch(e){
-                    var emsg = String(e)
-                    if (emsg.charAt(0) == '[')
-                        emsg = 'Error: ' + e.message
-                    reply = {error: emsg}
-                }finally{
+                if (line !== ':browsers'){
+                    reply = execute(line)
                     displayData(reply)
                     sendData(reply)
                 }
