@@ -137,7 +137,6 @@ function connect(){
             print('<br>')
             print('Welcome to Tutti - interactive Javascript shell')
             print('----------------------------------------------------------------------')
-            execute(':browsers')
             execute(':help')
             firstLogin = false
         }
@@ -208,7 +207,11 @@ function execute(command){
 function executeJS(command){
     var reply
     try{
-        var result = String(sandBoxEval(command))
+        var result = sandBoxEval(command)
+        if (typeof result === 'string')
+            result = "'" + result + "'"
+        else
+            result = String(result)
         reply = {reply: result}
     }catch(e){
         var emsg = String(e)

@@ -179,13 +179,15 @@ function onClientMessage(data) {
         client.browser = message.login.browser
         client.term = message.login.term
         client.roomID = roomID
-        
         clients.push(client)
+        
+        client.send(json({browsers: getBrowsers(clients)}))
+        
         //message.sessionId = client.sessionId
         message.browser = client.browser
 
         var name = client.browser || client.term
-        client.send(json({connected: true}))
+        
         if (name)
             broadcast(client, {announcement:name + ' joined'})
         log('Clients in room: ' + clients.length)
