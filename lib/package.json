@@ -9,7 +9,7 @@
        "node",
        "browser"
    ],
-   "version": "0.0.3",
+   "version": "0.0.4",
    "author": {
       "name" : "Toby Ho", 
       "email" : "airportyh@gmail.com",
