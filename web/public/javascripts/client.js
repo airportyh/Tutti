@@ -162,7 +162,7 @@ function resetConsole(){
 
 // received data from socket
 function didReceiveData(data) {
-    console.log(data)
+    //console.log(data)
     data = JSON.parse(data)
     displayData(data)
     if (data.command){
