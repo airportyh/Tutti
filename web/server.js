@@ -144,6 +144,25 @@ function getClients(roomID){
     return ret
 }
 
+// get a client from a room
+function getClient(sessionID, roomID){
+    var clients = getClients(roomID), len = clients.length
+    for (var i = 0; i < len; i++)
+        if (clients[i].sessionId === sessionID)
+            return clients[i]
+    return null
+}
+
+// send a message to a particular recipient
+function sendTo(roomID, recipient, message){
+    //log('sendTo ' + recipient)
+    var client = getClient(recipient, roomID)
+    if (client){
+        client.send(json(message))
+        //log('sent message to ' + recipient)
+    }
+}
+
 // *my* broadcast, which only broadcasts within the same room
 function broadcast(client, message, all){
     var clients = getClients(client.roomID)
@@ -221,7 +240,10 @@ function onClientMessage(data) {
         }else{
             message.sessionId = client.sessionId
             message.browser = client.browser
-            broadcast(client, message)
+            if (message.recipient)
+                sendTo(client.roomID, message.recipient, message)
+            else
+                broadcast(client, message)
         }
     }else{
         client._onDisconnect()

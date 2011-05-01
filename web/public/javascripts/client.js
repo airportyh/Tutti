@@ -169,6 +169,8 @@ function didReceiveData(data) {
         var reply = execute(data.command)
         if (reply){
             trackEvent('Command', 'completed')
+            if (data.sessionId)
+                reply.recipient = data.sessionId
             displayData(reply)
             sendData(reply)
         }
@@ -271,7 +273,7 @@ function initConsole(){
                 if (line !== ':browsers'){
                     reply = execute(line)
                     displayData(reply)
-                    sendData(reply)
+                    //sendData(reply)
                 }
             }
         },
