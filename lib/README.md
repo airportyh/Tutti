@@ -2,10 +2,10 @@ Tutti Terminal and Driver
 =========================
 This package contains
 
-1. A CLI interface(terminal) for [Tutti](http://tutti.tobyho.com).
-2. A library for interfacing with [Tutti](http://tutti.tobyho.com) programatically.
+1. A CLI interface(terminal) for [Tutti](http://tuttijs.com).
+2. A library for interfacing with [Tutti](http://tuttijs.com) programatically.
 
-[Tutti](http://tutti.tobyho.com) is an interactive Javascript shell that runs simultaneously on multiple browsers.
+[Tutti](http://tuttijs.com) is an interactive Javascript shell that runs simultaneously on multiple browsers.
 
 CLI interface Usage
 =============
@@ -40,8 +40,8 @@ Here is an example of using the Tutti driver to run a test suite using jasmine.
         .load('jasmine.js')
         .load('consoleJasmineReporter.js')
         .load('tests.js')
-        .command('jasmine.getEnv().addReporter(new ConsoleJasmineReporter())')
-        .command('jasmine.getEnv().execute()')
+        .eval('jasmine.getEnv().addReporter(new ConsoleJasmineReporter())')
+        .eval('jasmine.getEnv().execute()')
         .wait('console')
         .exit()
         
@@ -58,8 +58,8 @@ Bind to events. Available events are:
 - 'message' - a message from the server.
 - 'disconnect' - connection terminated.
 
-### tutti.command(jsCommand)
-Send a Javascript command to the connected browsers.
+### tutti.eval(jsOrFunction)
+Send a Javascript command to the connected browsers. `jsOrFunction` can either be a string containing Javascript or a function, in which case the function will be executed remotely in the browsers.
 
 ### tutti.load(localJSFile, _localJSFile2, ..._)
 or

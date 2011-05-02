@@ -4,13 +4,30 @@ Tutti is a web-based interactive Javascript console that allows you to simultane
 
 The live site
 -------------
-<http://tutti.tobyho.com/>
+<http://tuttijs.com/>
+
+To get started, create a room and bookmark the URL associated with that room. Copy-and-paste the room URL to other browsers to connect them to the same room. Javascript that you execute in the console will be executed on all browsers within this room and the results displayed.
+
+The Tutti Terminal
+------------------
+There's also a terminal version of Tutti which you can install with
+
+    npm install tutti
+    
+and run with
+
+    tutti <tutti room url>
+    
+The Tutti Driver
+----------------
+`npm install tutti` also installs a node library that let's you programmatically script the browsers that are connected to a particular room.
+See <lib/README.md> for more.
 
 To run locally
 --------------
-To start the server:
-
-    node server.js
+    
+    npm install tuttiserver
+    tuttiserver
 
 Then,
 
