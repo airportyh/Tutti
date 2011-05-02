@@ -21,7 +21,7 @@ and run with
 The Tutti Driver
 ----------------
 `npm install tutti` also installs a node library that let's you programmatically script the browsers that are connected to a particular room.
-See the [Tutti lib README.md](lib/README.md) for more.
+See the [Tutti lib README.md](https://github.com/airportyh/Tutti/blob/master/README.md) for more.
 
 To run locally
 --------------
