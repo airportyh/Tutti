@@ -41,6 +41,9 @@ body{
     text-shadow: 0px 1px 2px #222;
     filter: dropshadow(color=#222, offx=0, offy=1);
 }
+#top a{
+	color: #258df5;
+}
 #top,
 #bottom{
     padding: 2em 0;
@@ -96,4 +99,9 @@ body{
 
 img{
     border: none;
+}
+
+.updates{
+	font-style: italic;
+	font-size: 90%;
 }
