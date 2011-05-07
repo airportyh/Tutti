@@ -14,7 +14,7 @@ There's also a terminal version of Tutti which you can install with
 
     npm install tutti
     
-and run with
+Sometimes `sudo` may be needed depending on your npm installation. Now, run with
 
     tutti <tutti room url>
     
@@ -34,6 +34,10 @@ Then,
 1. Point your browser to <http://localhost:8080>.
 2. Point more browsers to the same location.
 3. Type commands into any of the browsers you have open and see them executed on all of them.
+
+Code Examples from JSConf
+-------------------------
+I've posted my [code examples](https://github.com/airportyh/Tutti-JSConf-Code-Examples) used at my JSConf 2011 demos.
 
 Credits
 -------
