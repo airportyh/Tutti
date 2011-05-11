@@ -1,78 +1,130 @@
 <!doctype html>
 <html>
 <head>
-  <title>Tutti - Interactively run Javascript on multiple browsers</title>
-  <link href='http://fonts.googleapis.com/css?family=Lobster&amp;subset=latin' rel='stylesheet' type='text/css'>
-  <link href="style.css" rel="stylesheet"/>
+	<title>Tutti - Test Javascript on different browsers simultaneously</title>
+	<link href='http://fonts.googleapis.com/css?family=Lobster&amp;subset=latin' rel='stylesheet' type='text/css'>
+	<link href="style.css" rel="stylesheet"/>
+	<script src="javascripts/modernizr.js"></script>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </head>
 <body>
-  <a href="http://github.com/airportyh/tutti">
-    <img id="forkme" src="forkme.png"/>
-  </a>
-  <div id="top">
-    <div class="frame">
-      <div class="title">
-        <h1>Tutti</h1>
-        <h4>Interactively run Javascript on multiple browsers</h4>
-      </div>
-      <p class="updates">Update: there's been a big update to Tutti. This site will be updated shortly, but in the mean time, please peruse the <a href="https://github.com/airportyh/Tutti">README</a> and the <a href="https://github.com/airportyh/Tutti-JSConf-Code-Examples">code examples</a>.</p>
-      <p><i>Tutti</i> lets you interactively execute Javascript on multiple web browsers at the same time. It has great browser support! So far tested on </p>
-  
-      <ul>
-        <li>Firefox 2.0, 3.6 and 4 beta</li>
-        <li>Chrome 8.0 - 10.0</li>
-        <li>Safari 5.0</li>
-        <li>Safari 4 Mobile for iPad and iPhone</li>
-        <li>Opera 10, 11</li>
-        <li>Internet Explorer 6, 7, 8 and 9</li>
-      </ul>
-  
-      <p>To get started, you simply create a room with <i>browser 1</i>, and then copy-n-paste the URL to <i>browser 2</i>, <i>browser 3</i>, <i>browser 4</i> and so on. Are you ready to give it a go?</p>
-      <form id="form" action="/create_room" method="post">
-        <button class="button" type="submit">Create a Room</button>
-        <div class="clear"></div>
-      </form>
-      <script>
-        if (location.hostname == 'tutti.tobyho.com' || location.hostname == 'tuttijs.com'){
-          // ugly hack for prod environment cuz I don't feel like a template
-          var url = 'http://tuttijs.com:' + 46071 + '/create_room'
-          document.getElementById('form').setAttribute('action', url)
-        }
-      </script>
-    </div>
-  </div>
-  <div id="bottom">
-    <div class="frame">
-      <h2>How it Works</h2>
-      <p>When you enter a Javascript command, it is immediately sent to each browser that's connected to the room. Each browser then <code>eval()</code> the Javascript within an iframe sandbox and then send the result back not only to the originating browser, but to <em>each</em> browser to be displayed.</p>
-      <p>All of the communication happen in real-time thanks to the brilliant <a href="http://socket.io">Socket.IO</a> which puts a nice abstraction around WebSocket and Comet techniques. </p>
-      <h2>Credits</h2>
-      <ul>
-        <li>LearnBoost's <a href="http://socket.io">Socket.IO</a></li>
-        <li><a href="http://expressjs.com/">Express</a> node web framework</li>
-        <li><a href="http://nodejs.org/">node.js</a> by Ryan Dahl</li>
-        <li>Chris Done's <a href="https://github.com/chrisdone/jquery-console">jQuery Console</a></li>
-        <li>Arunjit Singh's <a href="https://github.com/arunjitsingh/socket-chat">Socket Chat</a> which I used as a reference implementation.</li>
-      </ul>
-      <h2>Feedback</h2>
-      <p>Ping me on twitter <a href="http://twitter.com/airportyh">@airportyh</a> or <a href="https://github.com/airportyh/Tutti/issues">submit an issue</a> on GitHub.</p>
-    </div>
-  </div>
-  <script type="text/javascript">
-    if (location.hostname == 'tutti.tobyho.com' || location.hostname == 'tuttijs.com'){
+<aside>
+	<a href="http://github.com/airportyh/tutti">
+		<img id="forkme" src="forkme.png"/>
+	</a>
+</aside>
+<section id="top">
+	<hgroup>
+		<h1>Tutti</h1>
+		<h4>Test Javascript on different browsers simultaneously</h4>
+	</hgroup>
 
-      var _gaq = _gaq || [];
-      _gaq.push(['_setAccount', 'UA-3227150-7']);
-      _gaq.push(['_setDomainName', 'none']);
-      _gaq.push(['_setAllowLinker', true]);
-      _gaq.push(['_trackPageview']);
+	<section id="figures">
+		<figure id="console">
+			<h2>Console</h2>
+			<img src="console.png" alt="The Console"/><br>
+			<figcaption>Use console to interactively test browser features and behavior.</figcaption>
+		</figure>
 
-      (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-      })();
+		<figure id="driver">
+			<h2>Driver</h2>
+			<img src="driver.png" alt="The Driver"/><br>
+			<figcaption>Use driver to unit test your code, and more...</figcaption>
+		</figure>
+	</section>
+	
+	<section id="gettingstarted">
+		<h2>Getting Started</h2>
+		<p>To get started, you first need to create a room and connect your browser to it. Once a room is created you can connect other browsers to it as well.</p>
+		<blockquote>
+			<form id="form" action="/create_room" method="post">
+				<button class="button" type="submit">Create a Room and Connect</button>
+			</form>
+		</blockquote>
+		<p>Then, to go further, follow the <a href="">instructions for using the driver</a>.</p>
+		<script>
+			if (location.hostname == 'tutti.tobyho.com' || location.hostname == 'tuttijs.com'){
+				// ugly hack for prod environment cuz I don't feel like a template
+				var url = 'http://tuttijs.com:' + 46071 + '/create_room'
+				document.getElementById('form').setAttribute('action', url)
+			}
+		</script>
+	</section>
+</section>
+<section id="bottom">
+	
+	<section id="howitworks">
+		<h2>How it Works</h2>
+		<p>When you enter a Javascript command, it is immediately sent to each browser that's connected to the room. Each browser then <code>eval()</code> the Javascript within an iframe sandbox and then send the result back to be displayed.</p>
+		<p>Communication happens in real-time thanks to the brilliant <a href="http://socket.io">Socket.IO</a> which puts a nice abstraction around WebSocket and Comet techniques. </p>
+	</section>
+	
+	<section id="browsersupport">
+		<h2>Browser Support</h2>
+		<ul>
+			<li>Firefox 2, 3.6 and 4</li>
+			<li>Chrome 8 - 11</li>
+			<li>Safari 5</li>
+			<li>Safari 4 Mobile for iPad and iPhone</li>
+			<li>Opera 10, 11</li>
+			<li>Internet Explorer 6, 7, 8 and 9</li>
+		</ul>
+	</section>
+	
+	<section id="credits">
+		<h2>Credits</h2>
+		<ul>
+			<li>LearnBoost's <a href="http://socket.io">Socket.IO</a></li>
+			<li><a href="http://expressjs.com/">Express</a> node web framework</li>
+			<li><a href="http://nodejs.org/">node.js</a> by Ryan Dahl</li>
+			<li>Chris Done's <a href="https://github.com/chrisdone/jquery-console">jQuery Console</a></li>
+			<li>Arunjit Singh's <a href="https://github.com/arunjitsingh/socket-chat">Socket Chat</a> which I used as a reference implementation.</li>
+		</ul>
+	</section>
+	<section id="feedback">
+		<h2>Feedback</h2>
+		<p>Ping me on twitter <a href="http://twitter.com/airportyh">@airportyh</a> or <a href="https://github.com/airportyh/Tutti/issues">submit an issue</a> on GitHub.</p>
+	</section>
+</section>
+<script type="text/javascript">
+	if (location.hostname == 'tutti.tobyho.com' || location.hostname == 'tuttijs.com'){
 
-    }
-  </script>
+		var _gaq = _gaq || [];
+		_gaq.push(['_setAccount', 'UA-3227150-7']);
+		_gaq.push(['_setDomainName', 'none']);
+		_gaq.push(['_setAllowLinker', true]);
+		_gaq.push(['_trackPageview']);
+
+		(function() {
+			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		})();
+
+	}
+</script>
+
+<script src="javascripts/jquery.js"></script>
+<script>
+var $headers = $('figure h2')
+var $img = $($('figure img')[0])
+function resizeFigureHeaders(){
+	var imgWidth = $img.width()
+	var imgHeight = $img.height()
+	var height = imgHeight / 2
+	var top = (imgHeight - height) / 2 - 5
+	var offsetLeft = $img[0].offsetLeft
+	$headers.css({
+		top: top + 'px',
+		fontSize: height + 'px',
+		left: offsetLeft + 'px',
+		width: imgWidth + 'px'
+	})
+}
+$(function(){
+	$headers.addClass('overlay')
+	$(window).resize(resizeFigureHeaders)
+	resizeFigureHeaders()
+})
+</script>
 </body>
