@@ -124,10 +124,8 @@ function resizeFigureHeaders(){
 		width: imgWidth + 'px'
 	})
 }
-$(function(){
-	$headers.addClass('overlay')
-	$(window).resize(resizeFigureHeaders)
-	resizeFigureHeaders()
-})
+$headers.addClass('overlay')
+$(window).resize(resizeFigureHeaders)
+window.onload = resizeFigureHeaders // onload because we need to wait for the images to get their dimensions
 </script>
 </body>
