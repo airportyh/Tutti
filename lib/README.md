@@ -17,7 +17,7 @@ Installation
 
     npm install tutti -g
     
-`-g` means install globally(will install executable to `/usr/local/bin`). You could leave it off to install locally. See [npm docs](https://github.com/isaacs/npm#readme) for more info.
+`-g` means install globally(will install executable to `/usr/local/bin`). You could leave it off to install locally. `sudo` may be required depending on your npm install. See [npm docs](https://github.com/isaacs/npm#readme) for more info.
 
 CLI interface Usage
 =============
