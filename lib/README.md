@@ -95,3 +95,6 @@ Exit this node program.
 ### tutti.disconnect()
 Disconnect with the Tutti server.
     
+Code Examples
+=============
+I have the [code examples](https://github.com/airportyh/Tutti-JSConf-Code-Examples) I used for my JSConf 2011 presentation. Please use that as a reference point.
