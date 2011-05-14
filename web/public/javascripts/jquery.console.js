@@ -498,6 +498,7 @@
 
     // Scroll to the bottom of the view
     function scrollToBottom() {
+        window.scrollTo(0, $(document).height());
         inner.attr({ scrollTop: inner.attr("scrollHeight") });;
     };
 
@@ -578,7 +579,7 @@
         mesg.html(msg).hide();
         promptBox.before(mesg);
         mesg.show();
-        scrollToBottom();
+        setTimeout(scrollToBottom, 1)
     }
     extern.messageBeforePrompt = messageBeforePrompt
     

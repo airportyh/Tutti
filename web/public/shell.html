@@ -1,89 +1,99 @@
 <!doctype html>
 <html>
 <head>
-  <title>Tutti - Interactively run Javascript on multiple browsers</title>
-  <style>
-  body{
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-  }
-  #console {
-    font-size: 14px;
-    font-family: Monaco, monospace, fixed;
-  }
-  #console div.jquery-console-inner{
-    background:#222;
-    padding:0.5em;
-    overflow:auto;
-  }
-  #console div.jquery-console-prompt-box{
-    color:#fff; 
-  }
-  #console div.jquery-console-focus span.jquery-console-cursor {  
-    background:#fefefe; 
-    color:#333; 
-    font-weight:bold
-  }
-  #console div.jquery-console-message-error{
-    color:#ea2520; 
-    font-weight:bold;
-    padding:0.1em;
-  }
-  #console div.jquery-console-message-value,
-  #console .reply
-  {
-    color:#5ff63f; 
-    padding:0.1em;
-  }
-  #console .error{
-    color: #ff2848;
-  }
-  #console div.jquery-console-message-type{
-    color:#52666f; 
-    padding:0.1em;
-  }
-  #console span.jquery-console-prompt-label {
-    font-weight:bold;
-  }
-  #console .browser,
-  #console .announcement
-  {
-    color: #fff473;
-  }
-  #console .console{
-    color: #258df5;
-  }
-  </style>
-  <script src="javascripts/jquery.js"></script>
-  <script src="javascripts/jquery.console.js?7"></script>
-  <script src="javascripts/json.js"></script>
-  <script src="javascripts/socket.io.min.js?6"></script>
-  <script src="javascripts/client.js?30"></script>
+	<title>Tutti - Interactively run Javascript on multiple browsers</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<style>
+	body{
+		background:#222;
+	    margin: 0;
+	    padding: 0;
+	    overflow: auto;
+	}
+	#console {
+		font-size: 14px;
+		font-family: Monaco, monospace, fixed;
+	}
+	#console div.jquery-console-inner{
+		
+		padding:0.5em;
+	}
+	#console div.jquery-console-prompt-box{
+		color:#fff; 
+	}
+	#console div.jquery-console-focus span.jquery-console-cursor {  
+		background:#fefefe; 
+		color:#333; 
+		font-weight:bold
+	}
+	#console div.jquery-console-message-error{
+		color:#ea2520; 
+		font-weight:bold;
+		padding:0.1em;
+	}
+	#console div.jquery-console-message-value,
+	#console .reply
+	{
+		color:#5ff63f; 
+		padding:0.1em;
+	}
+	#console .error{
+		color: #ff2848;
+	}
+	#console div.jquery-console-message-type{
+		color:#52666f; 
+		padding:0.1em;
+	}
+	#console span.jquery-console-prompt-label {
+		font-weight:bold;
+	}
+	#console .browser,
+	#console .announcement
+	{
+		color: #fff473;
+	}
+	#console .console{
+		color: #258df5;
+	}
+	@media screen and (max-width: 600px){
+		.jquery-console-typer{
+			font-size: 200%;
+		}
+		
+	}
+	</style>
+	
+	<script src="javascripts/jquery.js"></script>
+	<script src="javascripts/jquery.console.js?8"></script>
+	<script src="javascripts/iscroll.js"></script>
+	<script src="javascripts/json.js"></script>
+	<script src="javascripts/socket.io.min.js?6"></script>
+	<script src="javascripts/client.js?40"></script>
+	
 </head>
 <body>
-  <noscript>
-    <p>
-      <strong>Please enable JavaScript in your browser.</strong>
-    </p>
-  </noscript>
-  <div id="console"></div>
-  <script type="text/javascript">
-    if (location.hostname == 'tutti.tobyho.com' || location.hostname == 'tuttijs.com'){
+	<noscript>
+		<p>
+			<strong>Please enable JavaScript in your browser.</strong>
+		</p>
+	</noscript>
+	<div id="console"></div>
+	<script type="text/javascript">
+		if (location.hostname == 'tutti.tobyho.com' || location.hostname == 'tuttijs.com'){
 
-      var _gaq = _gaq || [];
-      _gaq.push(['_setAccount', 'UA-3227150-7']);
-      _gaq.push(['_setDomainName', 'none']);
-      _gaq.push(['_setAllowLinker', true]);
-      _gaq.push(['_trackPageview']);
+			var _gaq = _gaq || [];
+			_gaq.push(['_setAccount', 'UA-3227150-7']);
+			_gaq.push(['_setDomainName', 'none']);
+			_gaq.push(['_setAllowLinker', true]);
+			_gaq.push(['_trackPageview']);
 
-      (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-      })();
+			(function() {
+				var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+				ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+				var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+			})();
 
-    }
-  </script>
+		}
+	</script>
 </body>
 </html>

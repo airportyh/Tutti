@@ -104,14 +104,40 @@ function log(msg){
 var sandboxIframe
 // based on Dean Edwards' sandbox
 function createSandBox(){
+    window.sandbox = undefined
     sandboxIframe = document.createElement("iframe")
-    sandboxIframe.id = 'sandbox'
-    sandboxIframe.src = '/blank.html'
+    //sandboxIframe.id = 'sandbox'
+    //sandboxIframe.src = '/blank.html'
     sandboxIframe.style.display = "none"
     document.body.appendChild(sandboxIframe)
+    setTimeout(function(){
+        var doc = sandboxIframe.contentWindow.document
+        doc.open('text/html')
+        doc.write('<!doctype html><html><head></head><body>\
+        <h1>One Two</h1>\
+        <script>\
+        var MSIE/*@cc_on =1@*/;\
+        parent.sandbox= MSIE ?\
+            this :\
+            {eval:function(s){return window.eval(s)}};\
+        this.console = {log: parent.log};\
+        var alert = function(){ throw new Error("Sorry, cannot alert() in here.")};\
+        var print = function(){ throw new Error("Sorry, cannot print() in here.")};\
+        var confirm = function(){ throw new Error("Sorry, cannot confirm() in here.")};\
+        var open = function(){ throw new Error("Sorry, cannot open() in here.")};\
+        </script>\
+        </body></html>')
+        doc.close()
+    }, 1)
 }
 function sandBoxEval(s){
-    return sandbox.eval(s)
+    if (typeof sandbox !== 'undefined')
+        return sandbox.eval(s)
+    else{
+        setTimeout(function(){
+            sandBoxEval(s)
+        }, 1)
+    }
 }
 
 // socket.IO socket
@@ -168,7 +194,6 @@ function didReceiveData(data) {
     if (data.command){
         var reply = execute(data.command)
         if (reply){
-            trackEvent('Command', 'completed')
             if (data.sessionId)
                 reply.recipient = data.sessionId
             displayData(reply)
@@ -199,12 +224,15 @@ function printUsage(){
 }
 
 function execute(command){
+    var retval
     if (command === ':reset')
-        resetConsole()
+        retval = resetConsole()
     else if (command === ':help')
-        printUsage()
+        retval = printUsage()
     else
-        return executeJS(command)
+        retval = executeJS(command)
+    trackEvent('Command', 'completed')
+    return retval
 }
 function executeJS(command){
     var reply
@@ -272,8 +300,8 @@ function initConsole(){
                 var reply
                 if (line !== ':browsers'){
                     reply = execute(line)
-                    displayData(reply)
-                    //sendData(reply)
+                    if (reply)
+                        displayData(reply)
                 }
             }
         },
