@@ -173,3 +173,23 @@ TuttiClient.prototype = {
         }
     }
 }
+
+function EmbeddedTuttiClient(){
+    function getConnectInfo(){
+        var tags = document.getElementsByTagName('script')
+        for (var i = 0; i < tags.length; i++){
+            var tag = tags[i]
+            var src = tag.getAttribute('src'), match
+            if (match = src.match(/^http:\/\/([^:]*)(?::([0-9]+))\/embeded\.js(?:\?(.*))?$/)){
+                return {
+                    hostname: match[1],
+                    port: match[2],
+                    roomID: match[3]
+                }
+            }
+        }
+        return null
+    }
+    var info = getConnectInfo()
+    return new TuttiClient(window, info.hostname, info.port, info.roomID)
+}

@@ -71,6 +71,26 @@ function initHTTP(){
         app.use(express.static(__dirname + '/public'))
     })
 
+    app.get('/embeded.js', function(req, res){
+        res.header('Content-Type', 'application/javascript')
+        var files = [
+            'socket.io.min.js',
+            'tutticlient.js'
+        ]
+        function sendNext(){
+            var file = files.shift()
+            if (file){
+                fs.readFile(__dirname + '/public/javascripts/' + file, function(err, data){
+                    res.write(';' + data)
+                    sendNext()
+                })
+            }else{
+                res.end(";new EmbeddedTuttiClient().connect()")
+            }
+        }
+        sendNext()
+    })
+
     if (config.rooms){
         
         // front page is the intro/welcome page which will have a 'Create Room'
@@ -110,6 +130,8 @@ function initHTTP(){
             res.sendfile(__dirname + '/public/shell.html')
         })
     }
+    
+    
 }
 
 // init socket.io
