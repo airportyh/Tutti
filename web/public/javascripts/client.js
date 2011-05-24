@@ -1,3 +1,4 @@
+
 // give this browser a name based on the `userAgent`
 // display name for this browser
 var browserName = (function(){
@@ -152,7 +153,7 @@ function connect(){
     
     socket = new io.Socket(host, {
         port:port, 
-        rememberTransport: false,
+        rememberTransport: true,
         transports: ['websocket', 'htmlfile', 'xhr-multipart', 'xhr-polling']
         });
 
@@ -316,7 +317,7 @@ function initConsole(){
 
 // Layout the UI based on the window size
 function layout(){
-    $('#console, #console .jquery-console-inner').css({
+    $('#console').css({
         height: ($(window).height() - 12) + 'px'
     })
 }
@@ -327,3 +328,4 @@ $(function(){
     initConsole()
     connect()
 })
+

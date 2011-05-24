@@ -189,7 +189,7 @@ function getBrowsers(clients){
 function onClientMessage(data) {
     
     
-    //log("DATA: " + data)
+    log("DATA: " + data)
     function onLoggedIn(roomID, message){
         var clients
         clients = getClients(roomID)

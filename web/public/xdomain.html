@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+<head>
+	<title>My App</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	
+</head>
+<body>
+	<h1>My App</h1>
+<script>
+
+var iframe = document.createElement('iframe')
+document.body.appendChild(iframe)
+function evaljs(s){
+	var ret = iframe.contentWindow.eval(s)
+	console.log('evaljs: ' + ret)
+}
+
+</script>
+</body>
+</html>

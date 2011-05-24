@@ -1,75 +1,81 @@
 <!doctype html>
 <html>
 <head>
-	<title>Tutti - Interactively run Javascript on multiple browsers</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<style>
-	body{
-		background:#222;
-	    margin: 0;
-	    padding: 0;
-	    overflow: auto;
-	}
-	#console {
-		font-size: 14px;
-		font-family: Monaco, monospace, fixed;
-	}
-	#console div.jquery-console-inner{
-		
-		padding:0.5em;
-	}
-	#console div.jquery-console-prompt-box{
-		color:#fff; 
-	}
-	#console div.jquery-console-focus span.jquery-console-cursor {  
-		background:#fefefe; 
-		color:#333; 
-		font-weight:bold
-	}
-	#console div.jquery-console-message-error{
-		color:#ea2520; 
-		font-weight:bold;
-		padding:0.1em;
-	}
-	#console div.jquery-console-message-value,
-	#console .reply
-	{
-		color:#5ff63f; 
-		padding:0.1em;
-	}
-	#console .error{
-		color: #ff2848;
-	}
-	#console div.jquery-console-message-type{
-		color:#52666f; 
-		padding:0.1em;
-	}
-	#console span.jquery-console-prompt-label {
-		font-weight:bold;
-	}
-	#console .browser,
-	#console .announcement
-	{
-		color: #fff473;
-	}
-	#console .console{
-		color: #258df5;
-	}
-	@media screen and (max-width: 600px){
-		.jquery-console-typer{
-			font-size: 200%;
-		}
-		
-	}
-	</style>
+<title>Tutti - Interactively run Javascript on multiple browsers</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+body{
+	background:#222;
+    margin: 0;
+    padding: 0;
+    overflow: auto;
+}
+#console {
+	font-size: 14px;
+	font-family: Monaco, monospace, fixed;
+}
+#console div.jquery-console-inner{
 	
-	<script src="javascripts/jquery.js"></script>
-	<script src="javascripts/jquery.console.js?8"></script>
-	<script src="javascripts/iscroll.js"></script>
-	<script src="javascripts/json.js"></script>
-	<script src="javascripts/socket.io.min.js?6"></script>
-	<script src="javascripts/client.js?40"></script>
+	padding:0.5em;
+}
+#console div.jquery-console-prompt-box{
+	color:#fff; 
+}
+#console div.jquery-console-focus span.jquery-console-cursor {  
+	background:#fefefe; 
+	color:#333; 
+	font-weight:bold
+}
+#console div.jquery-console-message-error{
+	color:#ea2520; 
+	font-weight:bold;
+	padding:0.1em;
+}
+#console div.jquery-console-message-value,
+#console .reply
+{
+	color:#5ff63f; 
+	padding:0.1em;
+}
+#console .error{
+	color: #ff2848;
+}
+#console div.jquery-console-message-type{
+	color:#52666f; 
+	padding:0.1em;
+}
+#console span.jquery-console-prompt-label {
+	font-weight:bold;
+}
+#console .browser,
+#console .announcement
+{
+	color: #fff473;
+}
+#console .console{
+	color: #258df5;
+}
+@media screen and (max-width: 600px){
+	.jquery-console-typer{
+		font-size: 200%;
+	}
 	
+}
+</style>
+<script src="javascripts/jquery.js"></script>
+<script src="javascripts/jquery.console.js?10"></script>
+<script src="javascripts/json.js"></script>
+<script src="javascripts/socket.io.min.js?6"></script>
+<script src="javascripts/tutticlient.js?1"></script>
+<script src="javascripts/sandboxedtutticlient.js?1"></script>
+<script src="javascripts/console.js?4"></script>
+<script>
+$(function(){
+	var client = new SandboxedTuttiClient(window, location.hostname, location.port)
+	client.connect()
+	var console = new Console(window, client)
+})
+</script>
 </head>
 <body>
 	<noscript>

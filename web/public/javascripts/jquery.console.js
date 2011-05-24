@@ -247,19 +247,21 @@
             promptBox.append(prompt);
             inner.append(promptBox);
             updatePromptDisplay();
-        };
-
-        ////////////////////////////////////////////////////////////////////////
-        function getSelection()
-        {
-            if (window.getSelection){
-                return String(window.getSelection());
-            }else if (document.getSelection){
-                return String(document.getSelection());
-            }else if (document.selection){
-                return String(document.selection.createRange().text);
-            }else return null;
         }
+
+        function getSelection(){
+            if (window.getSelection){
+                return String(window.getSelection())
+            }else if (document.getSelection){
+                return String(document.getSelection())
+            }else if (document.selection){
+                return String(document.selection.createRange().text);
+            }else{
+                return null;
+            }
+            
+        }
+
         
         function focusOnPrompt(){
             inner.addClass('jquery-console-focus');
@@ -308,6 +310,7 @@
             else return e.ctrlKey
         }
 
+        
         typer.keydown(function(e){
             cancelKeyPress = 0;
             dontTypeChar = false;
@@ -498,8 +501,9 @@
 
     // Scroll to the bottom of the view
     function scrollToBottom() {
-        window.scrollTo(0, $(document).height());
-        inner.attr({ scrollTop: inner.attr("scrollHeight") });;
+        var scrollTo = inner.attr("scrollHeight")
+        window.scrollTo(0, scrollTo);
+        //inner.attr({ scrollTop: inner.attr("scrollHeight") });;
     };
 
     function cancelExecution() {
