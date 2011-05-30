@@ -71,7 +71,7 @@ function initHTTP(){
         app.use(express.static(__dirname + '/public'))
     })
 
-    app.get('/embeded.js', function(req, res){
+    app.get('/embed.js', function(req, res){
         res.header('Content-Type', 'application/javascript')
         var files = [
             'socket.io.min.js',
@@ -210,8 +210,7 @@ function getBrowsers(clients){
 // called when a messages comes from a socket
 function onClientMessage(data) {
     
-    
-    log("DATA: " + data)
+    //log("DATA: " + data)
     function onLoggedIn(roomID, message){
         var clients
         clients = getClients(roomID)

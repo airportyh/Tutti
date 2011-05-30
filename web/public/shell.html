@@ -55,12 +55,67 @@ body{
 #console .console{
 	color: #258df5;
 }
+
+#buttons{
+    position: absolute;
+    top: 5px;
+    right: 5px;
+}
+
+#embed-panel,
+#marklet-panel
+{
+    font-family: Monaco, monospace, fixed;
+    font-size: 75%;
+    position: absolute;
+    top: 30px;
+    right: 5px;
+    display: none;
+    max-width: 300px;
+    color: #000;
+    float: right;
+    clear: right;
+    background-color: #ddd;
+    padding: 5px;
+    margin-right: 5px;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+}
+#embed-panel.active,
+#marklet-panel.active
+{
+    display: block;
+}
+
+#embed-textarea,
+#marklet-textarea
+{
+    min-width: 290px;
+    font-family: Monaco, monospace, fixed;
+    font-size: 100%;
+}
+
+button {
+    border-radius: 2px;
+    color: #aaa;
+    background-color: #444;
+    border: 1px solid #aaa;
+    cursor: pointer;
+    margin: 5px;
+}
+
+.button:hover {
+}
+.button:active {
+}
+
 @media screen and (max-width: 600px){
 	.jquery-console-typer{
 		font-size: 200%;
 	}
 	
 }
+
 </style>
 <script src="javascripts/jquery.js"></script>
 <script src="javascripts/jquery.console.js?10"></script>
@@ -74,6 +129,44 @@ $(function(){
 	var client = new SandboxedTuttiClient(window, location.hostname, location.port)
 	client.connect()
 	var console = new Console(window, client)
+	
+	
+	var scriptUrl = 'http://' + location.host + '/embed.js'
+	if (location.pathname.length > 1){
+	    scriptUrl += '?' + location.pathname.substring(1)
+	}
+	$('#embed-textarea').val('<' + 'script src="' + scriptUrl + '"><' + '/script>')
+	var markletScript = "javascript:(function(){var\
+ s=document.createElement('script');\
+s.src='" + scriptUrl + "';document.body.appendChild(s);})()"
+    $('#marklet-textarea').val(markletScript)
+    $('#markletLink').attr('href', markletScript)
+	$('#embed').click(function(){
+	    $('#embed-panel').toggle()
+	    $('#marklet-panel').hide()
+	    $('#embed-textarea').select()
+	})
+	$('#embed-textarea').focus(function(){
+	    var ta = this
+	    setTimeout(function(){
+	        ta.select()
+	    }, 1)
+	})
+	$('#marklet').click(function(){
+	    $('#marklet-panel').toggle()
+	    $('#embed-panel').hide()
+	    $('#marklet-textarea').select()
+	})
+	$('#marklet-textarea').focus(function(){
+	    var ta = this
+	    setTimeout(function(){
+	        ta.select()
+	    }, 1)
+	})
+	$('#console').click(function(){
+	    $('#embed-panel').hide()
+	    $('#marklet-panel').hide()
+	})
 })
 </script>
 </head>
@@ -83,6 +176,24 @@ $(function(){
 			<strong>Please enable JavaScript in your browser.</strong>
 		</p>
 	</noscript>
+	<div id="buttons">
+	   <button id="embed">Embed</button>
+	   <button id="marklet">Marklet</button>
+	</div>
+	<div id="embed-panel">
+	    <label>Embed : Put this code in your page to connect it to this room</label><br/>
+        <textarea id="embed-textarea" rows="4"></textarea>
+    </div>
+    <div id="marklet-panel">
+        <label>Bookmarklet : connect any web page to this
+            room using the
+            <a id="markletLink" href="">TuttiMarklet</a>
+            <--drag link to bookmark toolbar to install.
+            </label><br/><br/>
+        
+        <label>Or manually paste code:</label>
+        <textarea id="marklet-textarea" rows="5"></textarea>
+    </div>
 	<div id="console"></div>
 	<script type="text/javascript">
 		if (location.hostname == 'tutti.tobyho.com' || location.hostname == 'tuttijs.com'){

@@ -180,7 +180,7 @@ function EmbeddedTuttiClient(){
         for (var i = 0; i < tags.length; i++){
             var tag = tags[i]
             var src = tag.getAttribute('src'), match
-            if (match = src.match(/^http:\/\/([^:]*)(?::([0-9]+))\/embeded\.js(?:\?(.*))?$/)){
+            if (src && (match = src.match(/^http:\/\/([^:]*)(?::([0-9]+))\/embed\.js(?:\?(.*))?$/))){
                 return {
                     hostname: match[1],
                     port: match[2],
