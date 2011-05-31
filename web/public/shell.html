@@ -126,7 +126,8 @@ button {
 <script src="javascripts/console.js?4"></script>
 <script>
 $(function(){
-	var client = new SandboxedTuttiClient(window, location.hostname, location.port)
+    var roomID = location.pathname.match(/^\/([0-9a-z]+)$/)[1]
+	var client = new SandboxedTuttiClient(window, location.hostname, location.port, roomID)
 	client.connect()
 	var console = new Console(window, client)
 	

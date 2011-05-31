@@ -109,7 +109,6 @@ Console.prototype = {
     initConsole: function(){
         var self = this
         this.consoleDiv = $('#console')
-        console.log('consoleDiv: ' + this.consoleDiv)
         this.console = this.consoleDiv.console({
             promptLabel: '> ',
             commandValidate:function(line){

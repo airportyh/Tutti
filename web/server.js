@@ -205,7 +205,13 @@ function getBrowsers(clients){
     }, [])
 }
 
-
+function cleanupClients(roomID){
+    var clients = getClients(roomID)
+    clients.forEach(function(client, i){
+        if (!client.connected)
+            clients.splice(i, 1)
+    })
+}
 
 // called when a messages comes from a socket
 function onClientMessage(data) {
@@ -221,6 +227,10 @@ function onClientMessage(data) {
         client.roomID = roomID
         clients.push(client)
         
+        
+        cleanupClients(roomID)
+        log('Clients in room: ' + clients.length)
+        
         client.send(json({browsers: getBrowsers(clients)}))
         
         //message.sessionId = client.sessionId
@@ -230,7 +240,6 @@ function onClientMessage(data) {
         
         if (name)
             broadcast(client, {announcement:name + ' joined'})
-        log('Clients in room: ' + clients.length)
     }
     
     var client = this
