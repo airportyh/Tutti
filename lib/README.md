@@ -8,26 +8,26 @@ This package contains
 [Tutti](http://tuttijs.com) is an interactive Javascript shell with which you can test Javascript on multiple browsers simultaneously.
 
 Prerequisites
-=============
+-------------
 1. [node.js](http://nodejs.org/) 0.4 or above
 2. [npm](http://npmjs.org/) 1.0 or above
 
 Installation
-============
+-------------
 
     npm install tutti -g
     
 `-g` means install globally(will install executable to `/usr/local/bin`). You could leave it off to install locally. `sudo` may be required depending on your npm install. See [npm docs](https://github.com/isaacs/npm#readme) for more info.
 
 CLI interface Usage
-=============
+-------------
 
     tutti <tutti_room_url>
     
 This is the equivalent of the web-based Tutti console, only it's in your terminal. It has the same commands: `:help`, `:browsers`, `:reset`. It doesn't have any browsers on its own, so you'll have to connect browsers to the same room using the web-based Tutti in order to actually do anything. Type `exit` to get out of the program.
     
 Driver Library
-==============
+-------------
 Here is an example of using the Tutti driver to run a test suite using jasmine.
 
     var log = console.log
@@ -96,5 +96,16 @@ Exit this node program.
 Disconnect with the Tutti server.
     
 Code Examples
-=============
+-------------
 I have the [code examples](https://github.com/airportyh/Tutti-JSConf-Code-Examples) I used for my JSConf 2011 presentation. Please use that as a reference point.
+
+License
+-------
+
+(The MIT License)
+
+Copyright (c) 2011 Toby Ho &lt;airportyh@gmail.com&gt;
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the 'Software'), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
