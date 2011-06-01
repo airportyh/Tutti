@@ -127,8 +127,10 @@ Console.prototype = {
                     var reply
                     if (line !== ':browsers'){
                         reply = self.client.execute(line)
-                        if (reply)
+                        if (reply){
+                            self.client.sendData(reply)
                             self.displayData(reply)
+                        }
                     }
                 }
             },

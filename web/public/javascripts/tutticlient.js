@@ -118,9 +118,7 @@ TuttiClient.prototype = {
         if (data.command){
             var reply = this.execute(data.command)
             if (reply){
-                if (data.sessionId)
-                    reply.recipient = data.sessionId
-
+                this.notify('message', reply)
                 this.sendData(reply)
             }
         }
