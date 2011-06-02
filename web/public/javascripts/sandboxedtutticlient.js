@@ -10,34 +10,16 @@ SandboxedTuttiClient.prototype.createSandBox = function(){
     this.window.sandbox = null
     this.sandboxIframe = this.document.createElement("iframe")
     this.sandboxIframe.style.display = "none"
-    this.document.body.appendChild(this.sandboxIframe)
-    var self = this
-    setTimeout(function(){
-        var doc = self.sandboxIframe.contentWindow.document
-        doc.open('text/html')
-        doc.write('<!doctype html><html><head></head><body>\
-<script>\
-var MSIE/*@cc_on =1@*/;\
-parent.sandbox= MSIE ?\
-this :\
-{eval:function(s){return window.eval(s)}};\
-this.console = {log: parent.consoleLog};\
-var alert = function(){ throw new Error("Sorry, cannot alert() in here.")};\
-var print = function(){ throw new Error("Sorry, cannot print() in here.")};\
-var confirm = function(){ throw new Error("Sorry, cannot confirm() in here.")};\
-var open = function(){ throw new Error("Sorry, cannot open() in here.")};\
-</script>\
-</body></html>')
-        doc.close()
-    }, 1)
+    this.sandboxIframe.src = '/blank.html'
+    this.document.body.appendChild(this.sandboxIframe)    
 }
 SandboxedTuttiClient.prototype.evalJS = function(s){
-    if (typeof this.window.sandbox !== 'undefined')
+    if (this.window.sandbox){
         return this.window.sandbox.eval(s)
-    else{
+    }else{
         var self = this
         setTimeout(function(){
-            self.sandBoxEval(s)
+            self.evalJS(s)
         }, 1)
     }
 }
@@ -52,8 +34,13 @@ SandboxedTuttiClient.prototype.setupConsole = function(){
     this.window.consoleLog = consoleLog
 }
 
-SandboxedTuttiClient.prototype.resetConsole = function(){
+SandboxedTuttiClient.prototype.reset = function(){
     this.sandboxIframe.parentNode.removeChild(this.sandboxIframe)
     this.createSandBox()
-    this.notify('reset')
+}
+
+SandboxedTuttiClient.prototype.load = function(data){
+    this.notify('load', data)
+    var js = data.load
+    this.evalJS(js)
 }

@@ -1,12 +1,5 @@
 // GA Event Tracking. We track when a JS command is issued and when
 // it's been executed. We don't record the actual JS being executed.
-function trackEvent(category, action, value){
-    if (_gaq){
-        var arr = ['_trackEvent', category, action]
-        if (value) arr.push(value)
-        _gaq.push(arr)
-    }
-}
 
 function Console(window, client){
     this.window = window
@@ -19,23 +12,39 @@ Console.prototype = {
         this.initConsole()
         this.print('Connecting...')
         var self = this
-        this.client.on('connect', function(){
-            self.print('Connected', 'reply')
-        })
         this.client.on('message', function(data){
             self.displayData(data)
         })
         this.client.on('console', function(msg){
             self.displayData({console: msg})
         })
+        this.client.on('load', function(data){
+            self.trackEvent('Action', 'loaded')
+            self.print('loaded ' + data.filename)
+        })
         this.client.on('connect', function(){
+            self.print('Connected', 'reply')
+            self.trackEvent('Connection', 'connect')
             self.print('<br>')
             self.print('Welcome to Tutti - interactive Javascript shell')
             self.print('----------------------------------------------------------------------')
-            self.printHelp()
         })
-        this.client.on('reset', function(){
-            self.console.reset()
+        this.client.on('disconnect', function(){
+            self.trackEvent('Connection', 'disconnect')
+        })
+        this.client.on('eval', function(){
+            self.trackEvent('Eval', 'execute')
+        })
+        this.client.on('command', function(cmd){
+            self.trackEvent('Cmd', cmd)
+            if (cmd === ':help')
+                self.printHelp()
+            else if (cmd === ':browsers')
+                self.client.sendData({command: ':browsers'})
+            else if (cmd === ':clear')
+                self.console.reset()
+            else if (cmd === ':reset')
+                self.client.reset()
         })
     },
     // Count the number of open {, (, or [ for a given line of Javascript.
@@ -121,7 +130,7 @@ Console.prototype = {
                 }else{
                     self.console.continuedPrompt = false
                     self.console.commandResult('')
-                    trackEvent('Command', 'issued')
+                    self.trackEvent('Eval', 'send')
                     if (line !== ':help') 
                         self.client.sendData({command: line})
                     var reply
@@ -161,5 +170,15 @@ Console.prototype = {
         print('&nbsp;:browsers - show connected browsers')
         print('&nbsp;:reset - reset the Javascript sandbox')
         print('<br/>')
+    },
+    
+    // GA Event Tracking. We track when a JS command is issued and when
+    // it's been executed. We don't record the actual JS being executed.
+    trackEvent: function(category, action, value){
+        if (_gaq){
+            var arr = ['_trackEvent', category, action]
+            if (value) arr.push(value)
+            _gaq.push(arr)
+        }
     }
 }

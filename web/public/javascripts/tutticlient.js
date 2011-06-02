@@ -89,10 +89,6 @@ TuttiClient.prototype = {
         socket.on('message', this.bind('onMessage'))
         socket.connect()
     },
-    reset: function(){
-        // abstract
-        throw new Error('reset not implemented.')
-    },
     
     notify: function(evt){
         var args = Array.prototype.slice.call(arguments, 1),
@@ -121,7 +117,18 @@ TuttiClient.prototype = {
                 this.notify('message', reply)
                 this.sendData(reply)
             }
+        }else if (data.load){
+            this.load(data)
         }
+    },
+    load: function(data){
+        this.notify('load', data)
+        var js = data.load
+        var script = this.document.createElement('script')
+        var text = this.document.createTextNode(js)
+        script.appendChild(text)
+        this.document.body.appendChild(script)
+        this.document.body.removeChild(script)
     },
     onDisconnect: function(){
         this.notify('disconnected')
@@ -131,15 +138,10 @@ TuttiClient.prototype = {
         this.socket.send(JSON.stringify(data))
     },
     execute: function(command){
-        var retval
-        if (command === ':reset')
-            retval = this.resetConsole()
+        if (command.match(/^:[a-zA-Z]+$/))
+            this.notify('command', command)
         else
-            retval = this.executeJS(command)
-        return retval
-    },
-    resetConsole: function(){
-        
+            return this.executeJS(command)
     },
     executeJS: function(command){
         var reply
@@ -156,19 +158,11 @@ TuttiClient.prototype = {
                 emsg = 'Error: ' + e.message
             reply = {error: emsg}
         }
+        this.notify('eval')
         return reply
     },
     evalJS: function(js){
         return this.window.eval(js)
-    },
-    // GA Event Tracking. We track when a JS command is issued and when
-    // it's been executed. We don't record the actual JS being executed.
-    trackEvent: function(category, action, value){
-        if (_gaq){
-            var arr = ['_trackEvent', category, action]
-            if (value) arr.push(value)
-            _gaq.push(arr)
-        }
     }
 }
 
