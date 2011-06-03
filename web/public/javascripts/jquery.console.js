@@ -264,11 +264,14 @@
 
         
         function focusOnPrompt(){
-            inner.addClass('jquery-console-focus');
-            inner.removeClass('jquery-console-nofocus');
             typer.focus();
             scrollToBottom();
+            inner.addClass('jquery-console-focus');
+            inner.removeClass('jquery-console-nofocus');
+            
         }
+        
+        extern.focusOnPrompt = focusOnPrompt;
         
         // Handle setting focus
         container.click(function(){

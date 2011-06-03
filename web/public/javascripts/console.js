@@ -152,6 +152,9 @@ Console.prototype = {
         $(this.window).resize(function(){
             self.layout()
         })
+        $(this.window).bind('focus', function(){
+            self.console.focusOnPrompt()
+        })
     },
     
     // Layout the UI based on the window size
