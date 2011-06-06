@@ -1,6 +1,14 @@
 // GA Event Tracking. We track when a JS command is issued and when
 // it's been executed. We don't record the actual JS being executed.
-
+Array.prototype.map = function(func, context){
+    var len = this.length,
+        ret = []
+    for (var i = 0; i < len; i++){
+        if (i in this)
+            ret[i] = func.call(context, this[i], i, this)
+    }
+    return ret
+}
 function Console(window, client){
     this.window = window
     this.document = this.window.document
@@ -42,7 +50,7 @@ Console.prototype = {
             else if (cmd === ':browsers')
                 self.client.sendData({command: ':browsers'})
             else if (cmd === ':clear')
-                self.console.reset()
+                self.jqconsole.reset()
             else if (cmd === ':reset')
                 self.client.reset()
         })
@@ -73,7 +81,7 @@ Console.prototype = {
     // print a message to the console
     print: function(msg, clazz){
         clazz = clazz || 'announcement'
-        this.console.messageBeforePrompt(msg, clazz)
+        this.jqconsole.messageBeforePrompt(msg, clazz)
     },
     // print help message
     printHelp: function(){    
@@ -88,37 +96,37 @@ Console.prototype = {
     },
     // display a message to the console or notice area
     displayData: function(data){
-        var console = this.console
+        var jqconsole = this.jqconsole
         var browser = data.browser || this.client.browserName
         if (data.announcement)
-            console.messageBeforePrompt(data.announcement, 'announcement')
+            jqconsole.messageBeforePrompt(data.announcement, 'announcement')
         else if (data.command){
-            var pt = console.promptText()
-            console.promptText(data.command, 'command')
-            console.display('')
-            console.promptText(pt, 'command')
+            var pt = jqconsole.promptText()
+            jqconsole.promptText(data.command, 'command')
+            jqconsole.display('')
+            jqconsole.promptText(pt, 'command')
         }else if ('reply' in data){
             var msg = '<span class="browser">' + browser + 
                 ' => </span>' + console.htmlEncode(data.reply)
-            console.messageBeforePrompt(msg, 'reply')
+            jqconsole.messageBeforePrompt(msg, 'reply')
         }else if ('error' in data){
-            console.messageBeforePrompt('<span class="browser">' + 
+            jqconsole.messageBeforePrompt('<span class="browser">' + 
                 browser + ' => </span>' + data.error, 'error')
         }else if ('console' in data){
-            console.messageBeforePrompt('<span class="browser">' + 
-                browser + ' : </span>' + data.console, 'console')
+            jqconsole.messageBeforePrompt('<span class="browser">' + 
+                browser + ' : </span>' + data.jqconsole, 'console')
         }else if (data.browsers){
-            console.messageBeforePrompt('Connected browsers: ' + 
+            jqconsole.messageBeforePrompt('Connected browsers: ' + 
                 (data.browsers.map(function(b){return b.browser}).join(', ') || 'none'), 'announcement')
         }
     },
     // console control
-    console: null,
+    jqconsole: null,
     // create console control
     initConsole: function(){
         var self = this
-        this.consoleDiv = $('#console')
-        this.console = this.consoleDiv.console({
+        this.jqconsoleDiv = $('#console')
+        this.jqconsole = this.jqconsoleDiv.console({
             promptLabel: '> ',
             commandValidate:function(line){
                 return line != ''
@@ -126,10 +134,10 @@ Console.prototype = {
             continuedPromptLabel: '  ',
             commandHandle: function(line){
                 if (self.countParams(line) > 0){
-                    self.console.continuedPrompt = true
+                    self.jqconsole.continuedPrompt = true
                 }else{
-                    self.console.continuedPrompt = false
-                    self.console.commandResult('')
+                    self.jqconsole.continuedPrompt = false
+                    self.jqconsole.commandResult('')
                     self.trackEvent('Eval', 'send')
                     if (line !== ':help') 
                         self.client.sendData({command: line})
@@ -153,13 +161,13 @@ Console.prototype = {
             self.layout()
         })
         $(this.window).bind('focus', function(){
-            self.console.focusOnPrompt()
+            self.jqconsole.focusOnPrompt()
         })
     },
     
     // Layout the UI based on the window size
     layout: function(){
-        this.consoleDiv.css({
+        this.jqconsoleDiv.css({
             height: ($(this.window).height() - 12) + 'px'
         })
     },
