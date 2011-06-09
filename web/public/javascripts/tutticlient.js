@@ -1,9 +1,9 @@
 function TuttiClient(window, host, port, roomID){
-    if (!host || !port) return
+    if (!host) return
     this.window = window
     this.document = this.window.document
     this.host = host
-    this.port = port
+    this.port = port || 80
     this.roomID = roomID
     this.firstLogin = true
     this.login = {browser: this.browserName}
