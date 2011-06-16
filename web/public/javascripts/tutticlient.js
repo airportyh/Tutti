@@ -1,15 +1,18 @@
 function TuttiClient(window, host, port, roomID){
     if (!host) return
-    this.window = window
-    this.document = this.window.document
+    if (window){
+        this.window = window
+    }
     this.host = host
     this.port = port || 80
     this.roomID = roomID
     this.firstLogin = true
     this.login = {browser: this.browserName}
     if (roomID) this.login.roomID = roomID
-    this.setupConsole()
     this.cbs = {}
+    this.queue = new TaskQueue(true, this.bind('ready'))
+    this.setupConsole()
+    this.connect()
 }
 TuttiClient.prototype = {
     browserName: (function(){
@@ -45,6 +48,12 @@ TuttiClient.prototype = {
         }
         return userAgent
     })(),
+    getDocument: function(){
+        return this.window.document
+    },
+    getWindow: function(){
+        return this.window
+    },
     bind: function(fname){
         var f = this[fname],
             self = this
@@ -56,14 +65,17 @@ TuttiClient.prototype = {
         var cbs = this.cbs[event] = this.cbs[event] || []
         cbs.push(callback)
     },
+    ready: function(){
+        return true
+    },
     setupConsole: function(){
-        if (this.window.console._tutti) return
+        if (this.window.console._tutti_) return
         var self = this
         this.window.console = {
-            _tutti: true,
+            _tutti_: true,
             log: (function(){
             var realConsole = self.window.console
-            return function(){
+            return function log(){
                 var args = Array.prototype.slice.apply(arguments)
                 var data = {console: args.join(', ')}
                 self.sendData(data)
@@ -107,6 +119,7 @@ TuttiClient.prototype = {
             this.firstLogin = false
         }
     },
+    
     // received data from socket
     onMessage: function(data) {
         data = JSON.parse(data)
@@ -121,14 +134,23 @@ TuttiClient.prototype = {
             this.load(data)
         }
     },
-    load: function(data){
-        this.notify('load', data)
-        var js = data.load
-        var script = this.document.createElement('script')
-        var text = this.document.createTextNode(js)
-        script.appendChild(text)
-        this.document.body.appendChild(script)
-        this.document.body.removeChild(script)
+    load: function(data, callback){
+        this.queue.add(new Command('load', function(next){
+            var doc = this.getDocument()
+            
+            var js = data.load
+            var script = doc.createElement('script')
+            if (this.browserName.substring(0, 2) == 'IE')
+                script.text = js
+            else{
+                script.appendChild(doc.createTextNode(js))
+            }
+            doc.body.appendChild(script)
+            doc.body.removeChild(script)
+            this.notify('load', data)
+            if (callback) callback()
+            next()
+        }, this))
     },
     onDisconnect: function(){
         this.notify('disconnected')
@@ -137,13 +159,24 @@ TuttiClient.prototype = {
     sendData: function(data){
         this.socket.send(JSON.stringify(data))
     },
-    execute: function(command){
-        if (command.match(/^:[a-zA-Z]+$/))
-            this.notify('command', command)
-        else
-            return this.executeJS(command)
+    command: function(cmd, callback){
+        this.notify('command', cmd)
+        callback()
     },
-    executeJS: function(command){
+    execute: function(command, callback){
+        this.queue.add(new Command('eval', function(next){
+            function cb(){
+                if (callback)
+                    callback.apply(this, arguments)
+                next()
+            }
+            if (command.match(/^:[a-zA-Z]+$/))
+                this.command(command, cb)
+            else
+                this.executeJS(command, cb)
+        }, this))
+    },
+    executeJS: function(command, callback){
         var reply
         try{
             var result = this.evalJS(command)
@@ -159,7 +192,7 @@ TuttiClient.prototype = {
             reply = {error: emsg}
         }
         this.notify('eval')
-        return reply
+        if (callback) callback(reply)
     },
     evalJS: function(js){
         return this.window.eval(js)

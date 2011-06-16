@@ -1,5 +1,3 @@
-// GA Event Tracking. We track when a JS command is issued and when
-// it's been executed. We don't record the actual JS being executed.
 Array.prototype.map = function(func, context){
     var len = this.length,
         ret = []
@@ -28,7 +26,6 @@ Console.prototype = {
         })
         this.client.on('load', function(data){
             self.trackEvent('Action', 'loaded')
-            self.print('loaded ' + data.filename)
         })
         this.client.on('connect', function(){
             self.print('Connected', 'reply')
@@ -118,6 +115,8 @@ Console.prototype = {
         }else if (data.browsers){
             jqconsole.messageBeforePrompt('Connected browsers: ' + 
                 (data.browsers.map(function(b){return b.browser}).join(', ') || 'none'), 'announcement')
+        }else if ('load' in data){
+            jqconsole.messageBeforePrompt(data.filename + ' loaded.', 'announcement')
         }
     },
     // console control
@@ -143,11 +142,12 @@ Console.prototype = {
                         self.client.sendData({command: line})
                     var reply
                     if (line !== ':browsers'){
-                        reply = self.client.execute(line)
-                        if (reply){
-                            self.client.sendData(reply)
-                            self.displayData(reply)
-                        }
+                        self.client.execute(line, function(reply){
+                            if (reply){
+                                self.client.sendData(reply)
+                                self.displayData(reply)
+                            }
+                        })
                     }
                 }
             },
