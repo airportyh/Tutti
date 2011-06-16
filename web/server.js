@@ -40,6 +40,13 @@ var AllConfigs = {
         rooms: false,
         http: true,
         socket: true
+    },
+    // Cloud9 dev environment, standalone
+    cloud9: {
+        port: process.env.C9_PORT,
+        rooms: false,
+        http: true,
+        socket: true
     }
 }
 
