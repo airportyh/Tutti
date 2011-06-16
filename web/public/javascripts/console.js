@@ -107,14 +107,14 @@ Console.prototype = {
             jqconsole.promptText(pt, 'command')
         }else if ('reply' in data){
             var msg = '<span class="browser">' + browser + 
-                ' => </span>' + console.htmlEncode(data.reply)
+                ' => </span>' + jqconsole.htmlEncode(data.reply)
             jqconsole.messageBeforePrompt(msg, 'reply')
         }else if ('error' in data){
             jqconsole.messageBeforePrompt('<span class="browser">' + 
                 browser + ' => </span>' + data.error, 'error')
         }else if ('console' in data){
             jqconsole.messageBeforePrompt('<span class="browser">' + 
-                browser + ' : </span>' + data.jqconsole, 'console')
+                browser + ' : </span>' + data.console, 'console')
         }else if (data.browsers){
             jqconsole.messageBeforePrompt('Connected browsers: ' + 
                 (data.browsers.map(function(b){return b.browser}).join(', ') || 'none'), 'announcement')

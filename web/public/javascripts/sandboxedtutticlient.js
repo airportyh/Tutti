@@ -1,6 +1,7 @@
 function SandboxedTuttiClient(window, host, port, roomID){
     TuttiClient.call(this, window, host, port, roomID)
     this.createSandBox()
+    this.queue = []
 }
 SandboxedTuttiClient.prototype = new TuttiClient()
 SandboxedTuttiClient.prototype.constructor = SandboxedTuttiClient
@@ -14,13 +15,16 @@ SandboxedTuttiClient.prototype.createSandBox = function(){
     this.document.body.appendChild(this.sandboxIframe)    
 }
 SandboxedTuttiClient.prototype.evalJS = function(s){
+    return this.window.sandbox.eval(s)
+}
+SandboxedTuttiClient.prototype.executeJS = function(s, name){
     if (this.window.sandbox){
-        return this.window.sandbox.eval(s)
+        TuttiClient.prototype.executeJS.call(this, s)
     }else{
         var self = this
         setTimeout(function(){
-            self.evalJS(s)
-        }, 1)
+            self.executeJS(s)
+        }, 250)
     }
 }
 SandboxedTuttiClient.prototype.setupConsole = function(){
@@ -32,6 +36,7 @@ SandboxedTuttiClient.prototype.setupConsole = function(){
         self.notify('console', msg)
     }
     this.window.consoleLog = consoleLog
+    console.log('setupConsole complete.')
 }
 
 SandboxedTuttiClient.prototype.reset = function(){
@@ -42,5 +47,5 @@ SandboxedTuttiClient.prototype.reset = function(){
 SandboxedTuttiClient.prototype.load = function(data){
     this.notify('load', data)
     var js = data.load
-    this.evalJS(js)
+    this.executeJS(js)
 }
