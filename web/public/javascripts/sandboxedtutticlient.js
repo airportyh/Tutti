@@ -1,6 +1,7 @@
 // Sandboxed version creates an iframe sandbox to use for evals
-function SandboxedTuttiClient(window, host, port, roomID){
+function SandboxedTuttiClient(window, host, port, roomID, console){
     this.parentWindow = window
+    this.console = console
     TuttiClient.call(this, null, host, port, roomID)
 }
 SandboxedTuttiClient.prototype = new TuttiClient()
@@ -35,8 +36,11 @@ SandboxedTuttiClient.prototype.setupConsole = function(){
     this.createSandBox()
 }
 SandboxedTuttiClient.prototype.reset = function(){
-    this.sandboxIframe.parentNode.removeChild(this.sandboxIframe)
-    this.createSandBox()
+    this.queue.add(new Command('reset', function(next){
+        this.sandboxIframe.parentNode.removeChild(this.sandboxIframe)
+        this.createSandBox()
+        this.console.jqconsole.reset(next)
+    }, this))
 }
 SandboxedTuttiClient.prototype.ready = function(){
     return this.parentWindow.sandbox && this.getDocument()

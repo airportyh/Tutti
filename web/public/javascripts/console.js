@@ -7,10 +7,10 @@ Array.prototype.map = function(func, context){
     }
     return ret
 }
-function Console(window, client){
+function Console(window, hostname, port, roomID){
     this.window = window
     this.document = this.window.document
-    this.client = client
+    this.client = new SandboxedTuttiClient(window, hostname, port, roomID, this)
     this.init()
 }
 Console.prototype = {
@@ -19,13 +19,29 @@ Console.prototype = {
         this.print('Connecting...')
         var self = this
         this.client.on('message', function(data){
-            self.displayData(data)
+            if (!data.command && !data.load)
+                self.displayData(data)
         })
         this.client.on('console', function(msg){
             self.displayData({console: msg})
         })
         this.client.on('load', function(data){
+            self.displayData(data)
             self.trackEvent('Action', 'loaded')
+        })
+        this.client.on('eval', function(js){
+            self.displayData({command: js})
+            self.trackEvent('Action', 'eval')
+        })
+        this.client.on('command', function(cmd){
+            self.displayData({command: cmd})
+            if (cmd === ':help')
+                self.printHelp()
+            else if (cmd === ':browsers')
+                self.client.sendData({command: ':browsers'})
+            else if (cmd === ':reset')
+                self.client.reset()
+            self.trackEvent('Cmd', cmd)
         })
         this.client.on('connect', function(){
             self.print('Connected', 'reply')
@@ -36,20 +52,6 @@ Console.prototype = {
         })
         this.client.on('disconnect', function(){
             self.trackEvent('Connection', 'disconnect')
-        })
-        this.client.on('eval', function(){
-            self.trackEvent('Eval', 'execute')
-        })
-        this.client.on('command', function(cmd){
-            self.trackEvent('Cmd', cmd)
-            if (cmd === ':help')
-                self.printHelp()
-            else if (cmd === ':browsers')
-                self.client.sendData({command: ':browsers'})
-            else if (cmd === ':clear')
-                self.jqconsole.reset()
-            else if (cmd === ':reset')
-                self.client.reset()
         })
     },
     // Count the number of open {, (, or [ for a given line of Javascript.

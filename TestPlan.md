@@ -9,7 +9,8 @@ Tutti Console
 1. console
     * can eval
     * can console.log
-2. multiple browsers
+    * test all commands
+2. multiple browsers(IE6,7,8,9,FF,Safari,Chrome,Opera)
     * can eval on either browser
     * results display on all browsers
     * test obvious differences in browsers
@@ -17,3 +18,9 @@ Tutti Console
 3. driver
     * run example script
     * repeat runs and make sure the test suite runs through correctly each time
+4. embed and marklet
+    * make sure they still work
+5. tutti terminal
+    * can eval
+    * can console.log
+    * test all commands

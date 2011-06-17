@@ -181,9 +181,9 @@
 
         ////////////////////////////////////////////////////////////////////////
         // Reset terminal
-        extern.reset = function(){
+        extern.reset = function(callback){
             var welcome = (typeof config.welcomeMessage != 'undefined');
-            inner.parent().fadeOut(function(){
+            inner.parent().fadeOut(250, function(){
                 inner.find('div').each(function(){
                     if (!welcome) {
                         $(this).remove();
@@ -192,9 +192,10 @@
             }
                 });
                 newPromptBox();
-                inner.parent().fadeIn(function(){
+                inner.parent().fadeIn(250, function(){
                     inner.addClass('jquery-console-focus');
                     typer.focus();
+                    if (callback) callback()
                 });
             });
         };

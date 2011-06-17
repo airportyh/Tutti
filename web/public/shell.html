@@ -133,9 +133,7 @@ $(function(){
         return true // suppress IE 6 throwing up popup windows when things go wrong.
     }
     roomID = (location.pathname.match(/^\/([0-9a-z]+)$/) || [])[1]
-	client = new SandboxedTuttiClient(window, location.hostname, location.port, roomID)
-	ttConsole = new Console(window, client)
-
+	ttConsole = new Console(window, location.hostname, location.port, roomID)
 	
 	var scriptUrl = 'http://' + location.host + '/embed.js'
 	if (location.pathname.length > 1){

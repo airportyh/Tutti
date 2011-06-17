@@ -81,6 +81,8 @@ function initHTTP(){
     app.get('/embed.js', function(req, res){
         res.header('Content-Type', 'application/javascript')
         var files = [
+            'isa.js',
+            'taskqueue.js',
             'socket.io.min.js',
             'tutticlient.js'
         ]
@@ -92,7 +94,7 @@ function initHTTP(){
                     sendNext()
                 })
             }else{
-                res.end(";new EmbeddedTuttiClient().connect()")
+                res.end(";new EmbeddedTuttiClient()")
             }
         }
         sendNext()

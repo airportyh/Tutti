@@ -125,11 +125,13 @@ TuttiClient.prototype = {
         data = JSON.parse(data)
         this.notify('message', data)
         if (data.command){
-            var reply = this.execute(data.command)
-            if (reply){
-                this.notify('message', reply)
-                this.sendData(reply)
-            }
+            var self = this
+            this.execute(data.command, function(reply){
+                if (reply){
+                    self.notify('message', reply)
+                    self.sendData(reply)
+                }
+            })
         }else if (data.load){
             this.load(data)
         }
@@ -191,7 +193,7 @@ TuttiClient.prototype = {
                 emsg = 'Error: ' + e.message
             reply = {error: emsg}
         }
-        this.notify('eval')
+        this.notify('eval', command)
         if (callback) callback(reply)
     },
     evalJS: function(js){
