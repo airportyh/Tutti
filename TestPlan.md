@@ -18,6 +18,7 @@ Tutti Console
 3. driver
     * run example script
     * repeat runs and make sure the test suite runs through correctly each time
+    * test actually installing it as a user and then requiring it
 4. embed and marklet
     * make sure they still work
 5. tutti terminal
