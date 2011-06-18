@@ -22,9 +22,8 @@ Console.prototype = {
             if (!data.command && !data.load)
                 self.displayData(data)
         })
-        this.client.on('console', function(msg, displayCmd){
-            if (displayCmd)
-                self.displayData({console: msg})
+        this.client.on('console', function(msg){
+            self.displayData({console: msg})
         })
         this.client.on('load', function(data){
             self.displayData(data)
@@ -35,8 +34,9 @@ Console.prototype = {
                 self.displayData({command: js})
             self.trackEvent('Action', 'eval')
         })
-        this.client.on('command', function(cmd){
-            self.displayData({command: cmd})
+        this.client.on('command', function(cmd, displayCmd){
+            if (displayCmd)
+                self.displayData({command: cmd})
             if (cmd === ':help')
                 self.printHelp()
             else if (cmd === ':browsers')
