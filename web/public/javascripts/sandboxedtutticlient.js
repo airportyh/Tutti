@@ -39,7 +39,11 @@ SandboxedTuttiClient.prototype.reset = function(){
     this.queue.add(new Command('reset', function(next){
         this.sandboxIframe.parentNode.removeChild(this.sandboxIframe)
         this.createSandBox()
-        this.console.jqconsole.reset(next)
+        var self = this
+        this.console.jqconsole.reset(function(){
+            self.console.print('Sandbox environment reset.')
+            next()
+        })
     }, this))
 }
 SandboxedTuttiClient.prototype.ready = function(){

@@ -115,7 +115,7 @@ TuttiClient.prototype = {
         var data = JSON.stringify({login: this.login})
         this.socket.send(data)
         if (this.firstLogin){
-            this.execute(':help')
+            this.execute(':help', false)
             this.firstLogin = false
         }
     },
@@ -126,7 +126,7 @@ TuttiClient.prototype = {
         this.notify('message', data)
         if (data.command){
             var self = this
-            this.execute(data.command, function(reply){
+            this.execute(data.command, true, function(reply){
                 if (reply){
                     self.notify('message', reply)
                     self.sendData(reply)
@@ -161,11 +161,11 @@ TuttiClient.prototype = {
     sendData: function(data){
         this.socket.send(JSON.stringify(data))
     },
-    command: function(cmd, callback){
-        this.notify('command', cmd)
+    command: function(cmd, displayCmd, callback){
+        this.notify('command', cmd, displayCmd)
         callback()
     },
-    execute: function(command, callback){
+    execute: function(command, displayCmd, callback){
         this.queue.add(new Command('eval', function(next){
             function cb(){
                 if (callback)
@@ -173,12 +173,12 @@ TuttiClient.prototype = {
                 next()
             }
             if (command.match(/^:[a-zA-Z]+$/))
-                this.command(command, cb)
+                this.command(command, displayCmd, cb)
             else
-                this.executeJS(command, cb)
+                this.executeJS(command, displayCmd, cb)
         }, this))
     },
-    executeJS: function(command, callback){
+    executeJS: function(command, displayCmd, callback){
         var reply
         try{
             var result = this.evalJS(command)
@@ -193,7 +193,7 @@ TuttiClient.prototype = {
                 emsg = 'Error: ' + e.message
             reply = {error: emsg}
         }
-        this.notify('eval', command)
+        this.notify('eval', command, displayCmd)
         if (callback) callback(reply)
     },
     evalJS: function(js){
