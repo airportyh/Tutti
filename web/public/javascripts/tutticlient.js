@@ -1,4 +1,4 @@
-function TuttiClient(window, host, port, roomID){
+function TuttiClient(window, host, port, roomID, handlers){
     if (!host) return
     if (window){
         this.window = window
@@ -6,6 +6,7 @@ function TuttiClient(window, host, port, roomID){
     this.host = host
     this.port = port || 80
     this.roomID = roomID
+    this.handlers = handlers
     this.firstLogin = true
     this.login = {browser: this.browserName}
     if (roomID) this.login.roomID = roomID
@@ -127,18 +128,10 @@ TuttiClient.prototype = {
     onMessage: function(data) {
         data = JSON.parse(data)
         this.notify('message', data)
-        if (data.command){
-            var self = this
-            this.execute(data.command, true, function(reply){
-                if (reply){
-                    self.notify('message', reply)
-                    self.sendData(reply)
-                }
-            })
-        }else if (data.load){
-            this.load(data)
-        }
+        if (this.handlers.message)
+            this.handlers.message(data)
     },
+    
     load: function(data, callback){
         this.queue.add(new Command('load', function(next){
             var doc = this.getDocument()
@@ -151,36 +144,37 @@ TuttiClient.prototype = {
                 script.appendChild(doc.createTextNode(js))
             }
             doc.body.appendChild(script)
-            doc.body.removeChild(script)
+            try{
+                doc.body.removeChild(script)
+            }catch(e){
+                console.log(['Unloading', data.filename, ':', e.message].join(' '))
+            }
             this.notify('load', data)
             if (callback) callback()
             next()
         }, this))
     },
+    
     onDisconnect: function(){
         this.notify('disconnected')
     },
+    
     // send data as JSON
     sendData: function(data){
         this.socket.send(JSON.stringify(data))
     },
-    command: function(cmd, displayCmd, callback){
-        this.notify('command', cmd, displayCmd)
-        callback()
-    },
-    execute: function(command, displayCmd, callback){
+    
+    execute: function(data, displayCmd, callback){
         this.queue.add(new Command('eval', function(next){
             function cb(){
                 if (callback)
                     callback.apply(this, arguments)
                 next()
             }
-            if (command.match(/^:[a-zA-Z]+$/))
-                this.command(command, displayCmd, cb)
-            else
-                this.executeJS(command, displayCmd, cb)
+            this.executeJS(data, displayCmd, cb)    
         }, this))
     },
+    
     executeJS: function(command, displayCmd, callback){
         var reply
         try{
@@ -199,6 +193,7 @@ TuttiClient.prototype = {
         this.notify('eval', command, displayCmd)
         if (callback) callback(reply)
     },
+    
     evalJS: function(js){
         return this.window.eval(js)
     }

@@ -1,2 +1,3 @@
-lib/npm-debug.log
+npm-debug.log
 web/node_modules
+/sauce

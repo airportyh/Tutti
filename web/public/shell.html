@@ -117,22 +117,22 @@ button {
 }
 
 </style>
-<script src="javascripts/jquery.js"></script>
-<script src="javascripts/jquery.console.js?12"></script>
-<script src="javascripts/json.js"></script>
-<script src="javascripts/socket.io.min.js?6"></script>
-<script src="javascripts/isa.js?0"></script>
-<script src="javascripts/taskqueue.js?0"></script>
-<script src="javascripts/tutticlient.js?4"></script>
-<script src="javascripts/sandboxedtutticlient.js?3"></script>
-<script src="javascripts/console.js?12"></script>
+<script src="/javascripts/jquery.js"></script>
+<script src="/javascripts/jquery.console.js?12"></script>
+<script src="/javascripts/json.js"></script>
+<script src="/javascripts/socket.io.min.js?6"></script>
+<script src="/javascripts/isa.js?0"></script>
+<script src="/javascripts/taskqueue.js?0"></script>
+<script src="/javascripts/tutticlient.js?4"></script>
+<script src="/javascripts/sandboxedtutticlient.js?3"></script>
+<script src="/javascripts/console.js?12"></script>
 <script>
 var client, roomID, ttConsole
 $(function(){
     window.onerror = function(){
         return true // suppress IE 6 throwing up popup windows when things go wrong.
     }
-    roomID = (location.pathname.match(/^\/([0-9a-z]+)$/) || [])[1]
+    roomID = (location.pathname.match(/^\/([0-9a-z\-]+)\/$/) || [])[1]
 	ttConsole = new Console(window, location.hostname, location.port, roomID)
 	
 	var scriptUrl = 'http://' + location.host + '/embed.js'

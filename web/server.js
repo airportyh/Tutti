@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 require.paths.unshift(__dirname + '/lib')
 
-var io = require('socket.io')
-var express = require('express')
-var fs = require('fs')
-var Couch = require('couchdb').Couch
-var json = json = JSON.stringify
-var log = console.log
+var io = require('socket.io'),
+    express = require('express'),
+    fs = require('fs'),
+    json = JSON.stringify,
+    guid = require('guid'),
+    mkdirp = require('mkdirp').mkdirp,
+    fspath = require('path'),
+    log = console.log
 
 var AllConfigs = {
     // Production socket.io domain
@@ -14,24 +16,21 @@ var AllConfigs = {
         port: 46071,
         rooms: true,
         http: true,
-        socket: true,
-        db: 'tutti'
+        socket: true
     },
     // Test environment
     test: {
         port: 32224,
         rooms: true,
         http: true,
-        socket: true,
-        db: 'tuttitest'
+        socket: true
     },
     // Normal dev environment
     dev: {
         port: 8080,
         rooms: true,
         http: true,
-        socket: true,
-        db: 'tutti'
+        socket: true
     },
     // Standalone dev environment - no multiple rooms, no DB required, just the
     // shell
@@ -50,6 +49,8 @@ var AllConfigs = {
     }
 }
 
+
+
 // Figure out the environment to run in and setup the config
 var env = process.argv[2] || 'standalone'
 if (!(env in AllConfigs)){
@@ -59,6 +60,20 @@ if (!(env in AllConfigs)){
 log('Starting "' + env + '" environment.')
 var config = AllConfigs[env]
 
+// base directory for uploaded files
+config.basedir = process.env.HOME + '/.tuttiserver'
+console.log('config.basedir = ' + config.basedir)
+
+function ensureDir(path){
+    try{
+        fs.mkdirSync(path, 0777)
+    }catch(e){
+        // Dir already exists? Great!
+    }
+}
+ensureDir(config.basedir)
+ensureDir(roomDir('root'))
+
 // Create the server
 var app = express.createServer()
 // An app-wide dictionary of roomID -> clients
@@ -67,9 +82,17 @@ app.clients = {
     root : []
 }
 
+function roomDir(roomID){
+    return [config.basedir, roomID].join('/')
+}
 
-// a CouchDB instance to store the rooms info
-var db = config.rooms ? new Couch(config.db) : null
+function roomPath(roomID){
+    return '/' + roomID + '/'
+}
+
+function filePath(roomID, filename){
+    return roomDir(roomID) + '/' + filename
+}
 
 function initHTTP(){
 
@@ -108,23 +131,29 @@ function initHTTP(){
             res.sendfile(__dirname + '/public/intro.html')
         })
         
-        // create a room, stored in couchdb
+        // create a room, stored in the filesystem
         app.post('/create_room', function(req, res){
-            db.post({}, function(reply){
-                var roomID = reply.id
-                var path = '/' + roomID
-                log('room created ' + path)
-                res.redirect(path)
+            var roomID = guid.create().toString()
+            fs.mkdir(roomDir(roomID), 0777, function(err){
+                if (err) console.error(err.message)
+                else{
+                    var path = roomPath(roomID)
+                    log('room created ' + roomID)
+                    res.redirect(path)
+                }
             })
         })
 
         // page for entering the JS shell. You must have a valid roomID
         // to enter. You should be redirected here from `/create_room` 
         // or gotten the  URL from copy-n-paste.
-        app.get('/:roomID', function(req, res){
+        app.get('/:roomID/', function(req, res){
             var roomID = req.param('roomID')
-            db.get(roomID, function(room){
-                if (!room){
+            console.log('roomID: ' + roomID)
+            fs.stat(roomDir(roomID),  function(err, stat){
+                if (err){
+                    res.send(err.message, 404)
+                }else if (!stat.isDirectory()){
                     res.send('That room does not exist.', 404)
                 }else{
                     res.sendfile(__dirname + '/public/shell.html')
@@ -132,11 +161,31 @@ function initHTTP(){
             })
         })
         
+        app.get(/^\/(.+)\/(.*)$/, function(req, res){
+            var roomID = req.param[0],
+                file = req.param[1]
+            res.sendfile(filePath(file))
+        })
+        
+        
+        
+        // If accessing the room w/o a slash at the end, redirect to
+        // a URL *with* a slash
+        app.get('/:roomID', function(req, res){
+            res.redirect('/' + req.param('roomID') + '/')
+        })
+        
     }else{
         
         // Just serve the shell at the top level URL if no rooms needed.
         app.get('/', function(req, res){
             res.sendfile(__dirname + '/public/shell.html')
+        })
+        
+        app.get(/^\/(.*)$/, function(req, res){
+            var file = req.params[0]
+            var path = filePath('root', file)
+            res.sendfile(path)
         })
     }
     
@@ -214,11 +263,35 @@ function getBrowsers(clients){
     }, [])
 }
 
+// remove any socket client references that have disconnected
 function cleanupClients(roomID){
     var clients = getClients(roomID)
     clients.forEach(function(client, i){
         if (!client.connected)
             clients.splice(i, 1)
+    })
+}
+
+// save a file uploaded from a client
+function saveFile(message, roomID, client){
+    log(['saving', message.filename, 'to room', roomID].join(' '))
+    var filename = message.filename,
+        content = message.upload,
+        path = filePath(roomID, filename),
+        dir = fspath.dirname(path)
+    log('file path: ' + path)
+    log('dir: ' + dir)
+    mkdirp(dir, 0755, function(err){
+        if (err) console.log(err)
+        else fs.writeFile(path, content, function(err){
+            if (err){
+                log(err)
+                client.send(json({upload: 'error', error: err.message}))
+            }else{
+                log('wrote ' + message.filename + ' succeed!')
+                client.send(json({upload: 'succeed', filename: filename}))
+            }
+        })
     })
 }
 
@@ -258,9 +331,13 @@ function onClientMessage(data) {
         
         if (config.rooms){
             roomID = message.login.roomID
-            
-            db.get(roomID, function(room){
-                if (!room){
+            fs.stat(roomDir(roomID), function(err, stat){
+                if (err){
+                    client.send(json({announcement:err.message + ' Sorry!'}))
+                    client._onDisconnect()
+                    return
+                }
+                if (!stat.isDirectory()){
                     client.send(json({announcement:"Room does not exist. Try going back to the front page and creating another room."}))
                     client._onDisconnect()
                     return
@@ -273,9 +350,12 @@ function onClientMessage(data) {
             onLoggedIn(roomID, message)
         }
     }else if(client.roomID){
-        if (message.command === ':browsers'){
+        var roomID = client.roomID
+        if (message.browsers){
             var browsers = getBrowsers(getClients(client.roomID))
             client.send(json({browsers: browsers}))
+        }else if (message.upload){
+            saveFile(message, roomID, client)
         }else{
             message.sessionId = client.sessionId
             message.browser = client.browser

@@ -8,9 +8,15 @@ Array.prototype.map = function(func, context){
     return ret
 }
 function Console(window, hostname, port, roomID){
+    var self = this
     this.window = window
     this.document = this.window.document
-    this.client = new SandboxedTuttiClient(window, hostname, port, roomID, this)
+    this.client = new SandboxedTuttiClient(
+        window, hostname, port, roomID, this,
+        {message: function(){
+                self.onMessage.apply(self, arguments)
+            }
+        })
     this.init()
 }
 Console.prototype = {
@@ -34,27 +40,22 @@ Console.prototype = {
                 self.displayData({command: js})
             self.trackEvent('Action', 'eval')
         })
-        this.client.on('command', function(cmd, displayCmd){
-            if (displayCmd)
-                self.displayData({command: cmd})
-            if (cmd === ':help')
-                self.printHelp()
-            else if (cmd === ':browsers')
-                self.client.sendData({command: ':browsers'})
-            else if (cmd === ':reset')
-                self.client.reset()
-            self.trackEvent('Cmd', cmd)
-        })
         this.client.on('connect', function(){
             self.print('Connected', 'reply')
             self.trackEvent('Connection', 'connect')
             self.print('<br>')
             self.print('Welcome to Tutti - interactive Javascript shell')
             self.print('----------------------------------------------------------------------')
+            self.command(':help')
         })
         this.client.on('disconnect', function(){
             self.trackEvent('Connection', 'disconnect')
         })
+    },
+    keys: function(obj){
+        var ret = []
+        for (var k in obj) ret.push(k)
+        return ret
     },
     // Count the number of open {, (, or [ for a given line of Javascript.
     // Used to determine whether the command being entered is a multi-line.
@@ -142,17 +143,7 @@ Console.prototype = {
                     self.jqconsole.continuedPrompt = false
                     self.jqconsole.commandResult('')
                     self.trackEvent('Eval', 'send')
-                    if (line !== ':help') 
-                        self.client.sendData({command: line})
-                    var reply
-                    if (line !== ':browsers'){
-                        self.client.execute(line, false, function(reply){
-                            if (reply){
-                                self.client.sendData(reply)
-                                self.displayData(reply)
-                            }
-                        })
-                    }
+                    self.handleInput(line)
                 }
             },
             autofocus: true,
@@ -169,22 +160,60 @@ Console.prototype = {
         })
     },
     
+    parseCommand: function(line){
+        var m = line.match(/^:([a-zA-Z][a-zA-Z0-9]*)(?: +(.*))?$/)
+        if (m){
+            var cmd = {}
+            cmd[m[1]] = m[2] || m[1]
+            return cmd
+        }else
+            return {eval: line}
+    },
+    
+    // Handle the input typed on teh console
+    handleInput: function(line){
+        var self = this, reply
+        var cmd = self.parseCommand(line)
+        self.trackEvent('Cmd', this.keys(cmd)[0])
+        if (!cmd.help)
+            self.client.sendData(cmd)
+        self.command(cmd)
+    },
+    
+    // execute a command object or string
+    command: function(cmd, callback){
+        console.log('command: ' + JSON.stringify(cmd))
+        var self = this
+        if (typeof cmd === 'string')
+            cmd = this.parseCommand(cmd)
+        if (cmd.eval){
+            self.client.execute(cmd.eval, false, function(reply){
+                if (reply){
+                    self.client.sendData(reply)
+                    self.displayData(reply)
+                }
+            })
+        }else if (cmd.help){
+            self.printHelp()
+        }else if (cmd.reset)
+            self.client.reset()
+        else if (cmd.open){
+            self.client.open(cmd.open, callback)
+            return
+        }else if (cmd.console)
+            self.displayData(cmd)
+        if (callback) callback()
+    },
+    
+    onMessage: function(data){
+        this.command(data)
+    },
+    
     // Layout the UI based on the window size
     layout: function(){
         this.jqconsoleDiv.css({
             height: ($(this.window).height() - 12) + 'px'
         })
-    },
-    
-    printUsage: function(){
-        print('You can execute any Javascript in the shell below.')
-        print('To connect another browser, just copy-n-paste the current URL into it.')
-        print('The following commands are also available:')
-        print('<br/>')
-        print('&nbsp;:help - print out this message')
-        print('&nbsp;:browsers - show connected browsers')
-        print('&nbsp;:reset - reset the Javascript sandbox')
-        print('<br/>')
     },
     
     // GA Event Tracking. We track when a JS command is issued and when
