@@ -134,7 +134,7 @@ $(function(){
     }
     roomID = (location.pathname.match(/^\/([0-9a-z\-]+)\/$/) || [])[1]
 	ttConsole = new Console(window, location.hostname, location.port, roomID)
-	
+	window.Tutti = ttConsole.client
 	var scriptUrl = 'http://' + location.host + '/embed.js'
 	if (location.pathname.length > 1){
 	    scriptUrl += '?' + location.pathname.substring(1)
