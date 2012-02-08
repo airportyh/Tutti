@@ -1,32 +1,36 @@
 {
-   "name": "tuttiserver",
-   "description": "The Tutti Server.",
-   "keywords": [
-       "javascript",
-       "testing",
-       "node",
-       "browser",
-       "server"
-   ],
-   "version": "0.0.20",
-   "author": {
-      "name" : "Toby Ho", 
-      "email" : "airportyh@gmail.com",
-      "url" : "http://tuttijs.com"  
-   },
-   "repository": {
-       "type": "git",
-       "url": "http://github.com/airportyh/tutti.git"
-   },
-   "bugs": "http://github.com/airportyh/tutti/issues",
-   "engines": [
-       "node >= 0.6.2"
-   ],
-   "license" : "MIT",
-   "dependencies": {
-       "express": ">= 2.4.7",
-       "socket.io": "== 0.6.17",
-       "guid": "0.0.6"
-   },
-   "bin" : { "tuttiserver" : "./server.js" }
+  "name": "tuttiserver",
+  "description": "The Tutti Server.",
+  "keywords": [
+    "javascript",
+    "testing",
+    "node",
+    "browser",
+    "server"
+  ],
+  "version": "0.0.21",
+  "author": "Toby Ho <airportyh@gmail.com> (http://tuttijs.com)",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/airportyh/tutti.git"
+  },
+  "bugs": {
+    "name": "http://github.com/airportyh/tutti/issues"
+  },
+  "engines": [
+    "node >= 0.6.2"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "express": ">= 2.4.7",
+    "socket.io": "== 0.6.17",
+    "guid": "0.0.6"
+  },
+  "bin": {
+    "tuttiserver": "./server.js"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "devDependencies": {}
 }
