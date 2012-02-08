@@ -1,12 +1,11 @@
 #!/usr/bin/env node
-require.paths.unshift(__dirname + '/lib')
 
 var io = require('socket.io'),
     express = require('express'),
     fs = require('fs'),
     json = JSON.stringify,
     guid = require('guid'),
-    mkdirp = require('mkdirp').mkdirp,
+    mkdirp = require('./lib/mkdirp.js').mkdirp,
     fspath = require('path'),
     log = console.log
 

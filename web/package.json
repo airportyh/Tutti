@@ -20,12 +20,12 @@
    },
    "bugs": "http://github.com/airportyh/tutti/issues",
    "engines": [
-       "node >= 0.4.1"
+       "node >= 0.6.2"
    ],
    "license" : "MIT",
    "dependencies": {
-       "express": "== 2.4.7",
-       "socket.io": "0.6.17",
+       "express": ">= 2.4.7",
+       "socket.io": "== 0.6.17",
        "guid": "0.0.6"
    },
    "bin" : { "tuttiserver" : "./server.js" }
